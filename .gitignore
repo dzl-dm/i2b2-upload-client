@@ -1,0 +1,10 @@
+## Do not commit the files with sensitive, temporary or customizable data which a user is likely to edit.
+**secrets**
+!**/secrets
+!**/secrets/*-secrets.example
+.env
+.env-secrets
+configuration/
+log/
+tmp/
+__pycache__
