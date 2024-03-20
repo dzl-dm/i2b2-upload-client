@@ -7,6 +7,14 @@ We usually call this the `datasource.xml`. Its a custom xml definition of how th
 ## Running the application
 The initial aim is to allow the upload process to be run with low effort. This will evolve into a client with few dependencies and high ease of use - after enough development.
 
+### Docker mode
+Ensure you have docker installed (docker desktop is fine) and start the DWH image as a local container with:
+```sh
+docker run --name local-dwh-client --rm -it -v my/local/datasources:/datasources -e log_verbosity=3 -e secret_key="ChangeMe" dwh_api_key="ChangeMe" i2b2-upload-client
+```
+
+It will run interactively by offering you options for how to proceed.
+
 ## How it works
 There are 3 stages to the process.
 1. Converting to fhir
