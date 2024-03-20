@@ -16,7 +16,9 @@ ENV TZ=${TZ:-'Europe/Berlin'}
 ARG DEBIAN_FRONTEND="noninteractive"
 RUN apt-get update && \
     apt-get -y install \
+    curl \
     default-jdk \
+    jq \
     python3 \
     python3-pip \
     tzdata \
@@ -43,7 +45,7 @@ COPY --chmod=0644 ./resources/fhir_both-python.xslt ./pseudonym/resources/fhir_b
 
 # For uploader
 ENV DWH_API_ENDPOINT=http://localhost:8000/
-COPY --chmod=0755 ./docker/api-interaction.sh ./upload/api-interaction.sh
+# COPY --chmod=0755 ./docker/api-interaction.sh ./upload/api-interaction.sh
 
 # ...and overall coordination
 ENV log_verbosity=1
