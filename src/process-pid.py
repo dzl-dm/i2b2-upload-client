@@ -35,11 +35,8 @@ logger.debug("Settings: %s", settings)
 
 ## 3rd party imports
 import hashlib
-import io
 from lxml import etree
-import resource
 import sys
-import time
 
 ## For each invocation of the application, we create a dict of patients and list their encounters
 patient_encounters:dict[str, list] = {}
