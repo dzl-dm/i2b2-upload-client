@@ -13,6 +13,10 @@ function log_info { [[ "${log_verbosity}" -ge 2 ]] && >&2 echo "[$(date +"$df")]
 function log_warn { [[ "${log_verbosity}" -ge 1 ]] && >&2 echo "[$(date +"$df")] WARN: ${@}"; }
 function log_error { >&2 echo "[$(date +"$df")] ERROR: ${@}"; }
 >&2 echo "(stderr) logging verbosity set to: ${log_verbosity}"
+curl_args="-s"
+if [[ "${log_verbosity}" -ge 3 ]] ; then
+    curl_args="-v"
+fi
 case $log_verbosity in
     0) export log_level=ERROR ;;
     1) export log_level=WARNING ;;
@@ -80,10 +84,10 @@ function process_local_source {
 function api_options {
     ## Ask user what they want from the API, then call the relevant function (or command, if simple enough) to perform the action
     api_options=("List sources known to DWH" "Query specific DWH source" "Push new data to DWH" "Process uploaded data" "Delete a specific DWH dataset")
-    select opt in "${api_options[@]}" exit; do 
+    select opt in "${api_options[@]}" exit; do
         ## Use option indicies so code looks neater
         case $REPLY in
-                1) curl -v -X GET -H "x-api-key: ${dwh_api_key}" ${DWH_API_ENDPOINT%/}/datasource | jq ;;
+                1) curl ${curl_args} -X GET -H "x-api-key: ${dwh_api_key}" ${DWH_API_ENDPOINT%/}/datasource | jq ;;
                 2) query_dwh_source ;;
                 3) upload_source ;;
                 4) process_dwh_source ;;
@@ -117,13 +121,13 @@ function ask_source_name {
 function query_dwh_source {
     ## Default show status for source, then prompt for info or error
     source_name=$(ask_source_name)
-    curl -v -X GET -H "x-api-key: ${dwh_api_key}" ${DWH_API_ENDPOINT%/}/datasource/${source_name}/etl | jq
+    curl ${curl_args} -X GET -H "x-api-key: ${dwh_api_key}" ${DWH_API_ENDPOINT%/}/datasource/${source_name}/etl | jq
     api_get_source_options=("Get info" "Get error")
     select opt in "${api_get_source_options[@]}" exit; do 
         ## Use option indicies so code looks neater
         case $REPLY in
-                1) curl -v -X GET -H "x-api-key: ${dwh_api_key}" ${DWH_API_ENDPOINT%/}/datasource/${source_name}/etl/info ;;
-                2) curl -v -X GET -H "x-api-key: ${dwh_api_key}" ${DWH_API_ENDPOINT%/}/datasource/${source_name}/etl/error ;;
+                1) curl ${curl_args} -X GET -H "x-api-key: ${dwh_api_key}" ${DWH_API_ENDPOINT%/}/datasource/${source_name}/etl/info ;;
+                2) curl ${curl_args} -X GET -H "x-api-key: ${dwh_api_key}" ${DWH_API_ENDPOINT%/}/datasource/${source_name}/etl/error ;;
                 $((${#api_get_source_options[@]}+1))) echo "exiting"
                     break 2;;
                 *) echo Unrecognised choice: $REPLY ;;
@@ -138,7 +142,7 @@ function upload_source {
     if [ -d /datasources/${local_source_name} ] ; then
         dwh_bundle_path="/datasources/${local_source_name}/client-output/fhir-bundle-dwh.xml"
         if [ -d /datasources/${local_source_name}/client-output ] && [ -f "${dwh_bundle_path}" ] ; then
-            if curl -v -X PUT -H "x-api-key: ${dwh_api_key}" ${DWH_API_ENDPOINT%/}/datasource/${remote_source_name}/fhir-bundle -F "fhir_bundle=@${dwh_bundle_path}" ; then
+            if curl ${curl_args} -X PUT -H "x-api-key: ${dwh_api_key}" ${DWH_API_ENDPOINT%/}/datasource/${remote_source_name}/fhir-bundle -F "fhir_bundle=@${dwh_bundle_path}" ; then
                 msg_core="The DWH has accepted new data for '${remote_source_name}' (from '${local_source_name}')."
                 msg_full="${msg_core} Please check the status until it changes from 'Uploading' -> 'Uploaded', then you can trigger the processing."
                 log_info ${msg_core} 
@@ -166,7 +170,7 @@ function upload_source {
 function process_dwh_source {
     ## Request processing of a DWH datasource via the POST endpoint
     remote_source_name=$(ask_source_name "Please provide the DWH datasource name you wish to be processed")
-    if curl -v -X POST -H "x-api-key: ${dwh_api_key}" ${DWH_API_ENDPOINT%/}/datasource/${remote_source_name}/etl ; then
+    if curl ${curl_args} -X POST -H "x-api-key: ${dwh_api_key}" ${DWH_API_ENDPOINT%/}/datasource/${remote_source_name}/etl ; then
         msg_core="The DWH has accepted and queued processing of datasource '${remote_source_name}'."
         msg_full="${msg_core} Please check the status until it changes from 'Pending' -> 'Processing' => 'Succeeded' or 'Failed'."
         log_info ${msg_core} 
@@ -184,7 +188,7 @@ function process_dwh_source {
 function delete_dwh_source {
     ## Request deletion of a DWH datasource
     remote_source_name=$(ask_source_name "Please provide the DWH datasource name you wish to be deleted")
-    if curl -v -X DELETE -H "x-api-key: ${dwh_api_key}" ${DWH_API_ENDPOINT%/}/datasource/${remote_source_name} ; then
+    if curl ${curl_args} -X DELETE -H "x-api-key: ${dwh_api_key}" ${DWH_API_ENDPOINT%/}/datasource/${remote_source_name} ; then
         msg_core="The DWH has accepted and queued deletion of datasource '${remote_source_name}'."
         msg_full="${msg_core} Please check the status until it changes from 'Pending' -> 'Deleted'."
         log_info ${msg_core} 
