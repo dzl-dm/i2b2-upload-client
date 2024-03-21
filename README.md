@@ -25,6 +25,40 @@ The `datasource.xml` references csv files with data for patients, visits and obs
 
 The processing only adds or overwrites data in a sub-directory for each datasource called `client-output`, no other data is changed.
 
+### Windows mode (git for windows/gitbash)
+This option has been tested with a linux-like system within windows for the processing. You will need the following installed on your windows system before getting started with the client:
+* java 11 - Higher versions won't work as a feature we use was removed. Some older version will work
+* python 3.6+ - Tested with python 3.11
+* [git for windows](https://git-scm.com/download/win) (gitbash) - There are some options at install time, so behaviour may differe slightly
+
+#### Installation
+Open a command line terminal with gitbash (You might be able to opem `cmd` and use the option next to the new-tab `+` to choose gitbash). Check java and python are available:
+```sh
+java -version
+python --version
+```
+TODO: Download the client:
+```sh
+git clone 
+wget java-package
+```
+Install the python requirements:
+```sh
+cd repo
+pip3 install -r src/requirements.txt
+```
+TODO: Setup client for local usage - its not quite compatible with docker mode, maybe fix that instead?
+
+#### Usage
+Now you're ready to use the client.
+
+TODO: Use coordination script like in docker mode
+TODO: Optionally run each part manually?
+
+### Windows native client
+This is planned, but not yet available. This would reduce the installation requirements and workload significantly, general usage would be expected to be similar.
+
+
 ## How it works
 There are 3 stages to the process which are handled by this client.
 1. Converting to fhir
