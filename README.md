@@ -32,31 +32,31 @@ This option has been tested with a linux-like system within windows for the proc
 * [git for windows](https://git-scm.com/download/win) (gitbash) - There are some options at install time, so behaviour may differe slightly
 
 #### Installation
-Open a command line terminal with gitbash (You might be able to opem `cmd` and use the option next to the new-tab `+` to choose gitbash). Check java and python are available:
+Download the zip archive and unzip it where you'd like it to reside.
+Open a command line terminal with gitbash (You should be able to open `cmd` and use the option next to the new-tab `+` to choose gitbash). Run install script:
 ```sh
-java -version
-python --version
+cd path/to/unzipped/client/
+./install.sh
 ```
-TODO: Download the client:
-```sh
-git clone 
-wget java-package
-```
-Install the python requirements:
-```sh
-cd repo
-pip3 install -r src/requirements.txt
-```
-TODO: Setup client for local usage - its not quite compatible with docker mode, maybe fix that instead?
+This checks for dependencies (Java, Python, cURL), installs python libraries and links the functional scripts to the users' PATH.
 
 #### Usage
 Now you're ready to use the client.
 
-TODO: Use coordination script like in docker mode
-TODO: Optionally run each part manually?
+We use environment variables to connect to the API. There is an optional log level variable. You can set them as below:
+```sh
+export DWH_API_ENDPOINT=http://localhost
+export log_verbosity=2 ## OPTIONAL
+```
+When you run the client components, it will prompt for the `secret_key` (for pseudonymisation) and the `dwh_api_key` (for authenticating against the DWH API):
+```sh
+local-processing.sh path/to/datasource.xml [-s f|p]
+dwh-processing.sh
+```
+You must process the data locally with `local-processing.sh`, then as a separate action push it to the DWH with `dwh-processing.sh`. The `-s` option to the local processing script lets you process only to fhir or only pseudonyms (with existing, raw, fhir data). Without the option processes both in 1 go.
 
 ### Windows native client
-This is planned, but not yet available. This would reduce the installation requirements and workload significantly, general usage would be expected to be similar.
+This is planned, but not yet available. This would reduce the installation requirements significantly, usage is expected to be similar.
 
 
 ## How it works

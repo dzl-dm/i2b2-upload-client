@@ -1,22 +1,34 @@
 #!/bin/bash
-## Guide user through options to upload, view, process and delete data from the DWH
+## Guide user through options to upload, view, process and delete data via the DWH API
 
 df="%Y-%m-%d %H:%M:%S"
-function log_debug { [[ "${log_verbosity}" -ge 3 ]] && >&2 echo "[$(date +"$df")] DEBUG: ${@}"; }
-function log_info { [[ "${log_verbosity}" -ge 2 ]] && >&2 echo "[$(date +"$df")] INFO: ${@}"; }
-function log_warn { [[ "${log_verbosity}" -ge 1 ]] && >&2 echo "[$(date +"$df")] WARN: ${@}"; }
-function log_error { >&2 echo "[$(date +"$df")] ERROR: ${@}"; }
+script_name="$(basename ${BASH_SOURCE[0]})"
+function log_debug { [[ "${log_verbosity}" -ge 3 ]] && >&2 echo "[$(date +"$df")] {${script_name}} DEBUG: ${@}"; }
+function log_info { [[ "${log_verbosity}" -ge 2 ]] && >&2 echo "[$(date +"$df")] {${script_name}} INFO: ${@}"; }
+function log_warn { [[ "${log_verbosity}" -ge 1 ]] && >&2 echo "[$(date +"$df")] {${script_name}} WARN: ${@}"; }
+function log_error { >&2 echo "[$(date +"$df")] {${script_name}} ERROR: ${@}"; }
 >&2 echo "(stderr) logging verbosity set to: ${log_verbosity}"
 
-if ! curl --version > /dev/null 2>&1 ; then
-    log_error "cURL not available"
-    exit 1
-fi
+curl --version > /dev/null 2>&1 || (echo "cURL not available" && exit 1)
 curl_args="-s"
 if [[ "${log_verbosity}" -ge 3 ]] ; then
     curl_args="-v"
 fi
 
+## Check dwh_api_key variable - prompt if missing/empty
+if [[ ! -n $dwh_api_key || $dwh_api_key = "ChangeMe" ]] ; then
+    log_info "dwh_api_key is default or not set, prompting for user input..."
+    while true; do
+        read -p "Please enter your dwh_api_key: " api_key
+        ## Do some sort of sanity checks on key
+        if [[ "$api_key" =~ ^[A-Za-z][A-Za-z0-9\`\&\;\'\<\>_#$%@^~*+!?=.,:-]*$ ]] ; then
+            dwh_api_key=$api_key
+            break
+        else
+            echo "Sorry, this name isn't valid, please try again..." >&2
+        fi
+    done
+fi
 
 function api_options {
     ## Ask user what they want from the API, then call the relevant function (or command, if simple enough) to perform the action
@@ -48,15 +60,6 @@ function ask_remote_source_name {
                 $((REPLY == ${#dwh_sources[@]}+2))) echo "" && return 1 ;;
                 *) echo Unrecognised choice: $REPLY ;;
         esac
-        # if [[ $REPLY -eq ${#dwh_sources[@]} ]] ; then
-        #     echo "exiting"
-        #     return 1
-        # elif [[ $REPLY -lt ${#dwh_sources[@]} ]] ; then
-        #     echo ${opt}
-        #     return 0
-        # else
-        #     echo "Unrecognised choice: $REPLY"
-        # fi
     done
     return 1
 }
