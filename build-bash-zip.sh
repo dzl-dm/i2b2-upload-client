@@ -15,6 +15,8 @@ mkdir -p bash-client/pseudonym/{src,resources}
 cp -a src/process-pid.py bash-client/pseudonym/src/pseudonym-pid-fhir.py
 cp -a src/requirements.txt bash-client/pseudonym/src/
 cp -a resources/fhir_both-python.xslt bash-client/pseudonym/resources/
+## Convert the markdown ReadMe to more universal HTML
+pandoc -f markdown README.md > bash-client/README.html
 
 ## Build the archive
 zip -r bash-client.zip bash-client/
@@ -22,3 +24,4 @@ zip -r bash-client.zip bash-client/
 ## Remove copied file
 rm -rf bash-client/format
 rm -rf bash-client/pseudonym
+rm -f bash-client/README.html
