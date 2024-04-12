@@ -11,7 +11,7 @@ function log_error { >&2 echo "[$(date +"$df")] {${script_name}} ERROR: ${@}"; }
 
 ## Add the venv python to PATH, so we use that over the system version (if it was created by install.sh)
 client_basedir=$( dirname $(dirname "$(readlink -f "${BASH_SOURCE[0]}")") ) ## Parent of this "scripts" dir
-[[ -d "${client_basedir}/.venv" ]] && source .venv/bin/activate && log_info "Using python venv..."
+[[ -d "${client_basedir}/.venv" ]] && source ${client_basedir}/.venv/bin/activate && log_info "Using python venv..."
 
 ## Check java and python are available
 java -version > /dev/null 2>&1 || (echo "Java not available" && exit 1)
@@ -44,10 +44,10 @@ fi
 if [[ ! -n $secret_key || $secret_key = "ChangeMe" ]] ; then
     log_info "secret_key is default or not set, prompting for user input..."
     while true; do
-        read -p "Please enter your secret_key: " api_key
+        read -p "Please enter your secret_key: " secret_key_in
         ## Do some sort of sanity checks on key
-        if [[ "$api_key" =~ ^[A-Za-z][A-Za-z0-9\`\&\;\'\<\>_#$%@^~*+!?=.,:-]*$ ]] ; then
-            secret_key=$api_key
+        if [[ "$secret_key_in" =~ ^[A-Za-z][A-Za-z0-9\`\&\;\'\<\>_#$%@^~*+!?=.,:-]*$ ]] ; then
+            secret_key=$secret_key_in
             break
         else
             echo "Sorry, this name isn't valid, please try again..." >&2
@@ -56,10 +56,11 @@ if [[ ! -n $secret_key || $secret_key = "ChangeMe" ]] ; then
 fi
 
 ## Set the datasource_path and _dir for both processing parts to use
-datasource_path=$1
+rel_datasource_path=$1
+datasource_path=$(echo "$(cd "$(dirname "${rel_datasource_path}")"; pwd)/$(basename "${rel_datasource_path}")")
 [[ -f "${datasource_path}" ]] || (log_error "Provided parameter (${datasource_path}) is not a file on this filesystem, aborting..." && exit 1)
 datasource_dir=$( dirname "${datasource_path}" )
-
+log_debug "abs_datasource_path: ${abs_datasource_path} - datasource_path: ${datasource_path} - datasource_dir: ${datasource_dir}"
 
 function datasource_to_fhir {
     ## Prepare the source data into a pseudonymised fhir-bundle
@@ -96,4 +97,4 @@ fi
 ## END
 
 ## Cleanup venv...
-deactivate
+[[ -d "${client_basedir}/.venv" ]] && deactivate

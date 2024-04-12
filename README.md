@@ -1,5 +1,5 @@
 # i2b2 upload client
-Utilising a helper file, which uses a custom XML format to define meanings, this application will convert CSV based patient data into fhir-xml format. This is helpful for integrating diverse sources of date into a standardised format for furhter analysis.
+Utilising a helper file, which uses a custom XML format to define meanings, this application will convert CSV based patient data into fhir-xml format. This is helpful for integrating diverse sources of date into a standardised format for further analysis.
 
 ## Helper file
 We usually call this the `datasource.xml`. Its a custom xml definition of how the csv patient data is formatted (which files, which columns map to which parameters).
@@ -29,7 +29,7 @@ The processing only adds or overwrites data in a sub-directory for each datasour
 This option has been tested with a linux-like system within windows for the processing. You will need the following installed on your windows system before getting started with the client:
 * java 11 - Higher versions won't work as a feature we use was removed. Some older version will work
 * python 3.6+ - Tested with python 3.11
-* [git for windows](https://git-scm.com/download/win) (gitbash) - There are some options at install time, so behaviour may differe slightly
+* [git for windows](https://git-scm.com/download/win) (gitbash) - There are some options at install time, so behaviour may differ slightly
 
 #### Installation
 Download the zip archive and unzip it where you'd like it to reside.
