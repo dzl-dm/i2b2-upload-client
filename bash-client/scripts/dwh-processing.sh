@@ -19,7 +19,20 @@ fi
 if [[ ! -n $dwh_api_key || $dwh_api_key = "ChangeMe" ]] ; then
     log_info "dwh_api_key is default or not set, prompting for user input..."
     while true; do
-        read -p "Please enter your dwh_api_key: " api_key
+        ## Default read with -s doesn't indicate any input is being registered which can be confusing
+        read -r -s -p "Please enter your dwh_api_key (not visible):" api_key
+        ## More complex processing can register charachter's being entered
+        # unset pass;
+        # echo -n "Please enter your dwh_api_key: "
+        # while IFS= read -r -s -n1 pass; do
+        #     if [[ -z $pass ]]; then
+        #         echo
+        #         break
+        #     else
+        #         echo -n '*'
+        #         api_key+=$pass
+        #     fi
+        # done
         ## Do some sort of sanity checks on key
         if [[ "$api_key" =~ ^[A-Za-z][A-Za-z0-9\`\&\;\'\<\>_#$%@^~*+!?=.,:-]*$ ]] ; then
             dwh_api_key=$api_key
@@ -140,13 +153,13 @@ function upload_source {
         return 1
     fi
     if curl ${curl_args} -X PUT -H "x-api-key: ${dwh_api_key}" ${DWH_API_ENDPOINT%/}/datasource/${remote_source_name}/fhir-bundle -F "fhir_bundle=@${dwh_bundle_path}" ; then
-        msg_core="The DWH has accepted new data for '${remote_source_name}' (from '${local_source_name}')."
+        msg_core="The DWH has accepted new data for '${remote_source_name}'."
         msg_full="${msg_core} Please check the status until it changes from 'Uploading' -> 'Uploaded', then you can trigger the processing."
         log_info ${msg_core} 
         echo "${msg_full}"
         return 0
     else
-        fail_msg_core="Something went wrong uploading the data to the DWH for '${remote_source_name}' (from '${local_source_name}')."
+        fail_msg_core="Something went wrong uploading the data to the DWH for '${remote_source_name}'."
         fail_msg="${fail_msg_core} Please check your connectivity and contact the DWH maintainer if the problem persists."
         log_warn ${fail_msg_core} 
         echo "${fail_msg}"

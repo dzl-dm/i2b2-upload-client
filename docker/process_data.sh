@@ -39,6 +39,11 @@ log "$(${suitable_java} -version)"
 
 
 clientdir="$( dirname ${BASH_SOURCE[0]} )"
+CLASSPATH=""
+for jar in $(ls -1d ${clientdir}/lib/*); do
+	CLASSPATH=$jar:$CLASSPATH
+done
+
 log 'Bundle processing...'
-"${suitable_java}" -Dfile.encoding="UTF-8" -cp ${clientdir}/lib/\* de.sekmi.histream.etl.ExportFHIR $*
+"${suitable_java}" -Dfile.encoding="UTF-8" -cp ${CLASSPATH} de.sekmi.histream.etl.ExportFHIR $*
 log 'Bundle processing ... DONE'

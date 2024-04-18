@@ -44,9 +44,22 @@ fi
 if [[ ! -n $secret_key || $secret_key = "ChangeMe" ]] ; then
     log_info "secret_key is default or not set, prompting for user input..."
     while true; do
-        read -p "Please enter your secret_key: " secret_key_in
+        ## Default read with -s doesn't indicate any input is being registered which can be confusing
+        read -r -s -p "Please enter your secret_key (not visible):" secret_key_in
+        ## More complex processing can register charachter's being entered
+        # unset pass;
+        # echo -n "Please enter your secret_key: "
+        # while IFS= read -r -s -n1 pass; do
+        #     if [[ -z $pass ]]; then
+        #         echo
+        #         break
+        #     else
+        #         echo -n '*'
+        #         secret_key_in+=$pass
+        #     fi
+        # done
         ## Do some sort of sanity checks on key
-        if [[ "$secret_key_in" =~ ^[A-Za-z][A-Za-z0-9\`\&\;\'\<\>_#$%@^~*+!?=.,:-]*$ ]] ; then
+        if [[ "$secret_key_in" =~ ^[A-Za-z][A-Za-z0-9\`\&\;\'\<\>_#$%@^~*+!?=.,:-]*$ && $secret_key_in != "ChangeMe" ]] ; then
             secret_key=$secret_key_in
             break
         else
