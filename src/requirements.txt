@@ -1,2 +1,4 @@
 lxml
 pydantic-settings
+fhir.resources
+fhir.resources[xml]

@@ -61,6 +61,7 @@ if [[ ! -n $secret_key || $secret_key = "ChangeMe" ]] ; then
         ## Do some sort of sanity checks on key
         if [[ "$secret_key_in" =~ ^[A-Za-z][A-Za-z0-9\`\&\;\'\<\>_#$%@^~*+!?=.,:-]*$ && $secret_key_in != "ChangeMe" ]] ; then
             secret_key=$secret_key_in
+            echo ""
             break
         else
             echo "Sorry, this name isn't valid, please try again..." >&2
@@ -91,10 +92,11 @@ function pseudonymise_fhir {
     ## Pseudonymise the fhir-bundle without changing any other data
     log_debug "Start pseudonymisation..."
     ## The python pseudonymisation script uses env vars for settings
-    export input_fn=${datasource_dir}/client-output/fhir-bundle-raw.xml
-    export output_fn=${datasource_dir}/client-output/fhir-bundle-dwh.xml
+    # export input_fn=${datasource_dir}/client-output/fhir-bundle-raw.xml
+    # export output_fn=${datasource_dir}/client-output/fhir-bundle-dwh.xml
     export secret_key=${secret_key}
-    ${client_basedir}/pseudonym/src/pseudonym-pid-fhir.py
+    # ${client_basedir}/pseudonym/src/pseudonym-pid-fhir.py
+    cat ${datasource_dir}/client-output/fhir-bundle-raw.xml | ${client_basedir}/pseudonym/src/pseudonym-pid-fhir-streaming.py > ${datasource_dir}/client-output/fhir-bundle-dwh.xml
     log_info "Pseudonym processing complete, see DWH-ready output at: (${output_fn})..."
 }
 
@@ -111,3 +113,4 @@ fi
 
 ## Cleanup venv...
 [[ -d "${client_basedir}/.venv" ]] && deactivate
+log_info "Local processing completed"

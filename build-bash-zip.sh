@@ -12,7 +12,8 @@ mkdir -p bash-client/format/lib
 cp -a docker/process_data.sh bash-client/format/fhir-from-datasource.sh
 cp -a resources/lib bash-client/format/
 mkdir -p bash-client/pseudonym/{src,resources}
-cp -a src/process-pid.py bash-client/pseudonym/src/pseudonym-pid-fhir.py
+# cp -a src/process-pid.py bash-client/pseudonym/src/pseudonym-pid-fhir.py
+cp -a src/stream-pseudonymization.py bash-client/pseudonym/src/pseudonym-pid-fhir-streaming.py
 cp -a src/requirements.txt bash-client/pseudonym/src/
 cp -a resources/fhir_both-python.xslt bash-client/pseudonym/resources/
 ## Convert the markdown ReadMe to more universal HTML
