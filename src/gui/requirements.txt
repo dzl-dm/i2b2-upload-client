@@ -1,0 +1,8 @@
+fhir.resources
+fhir.resources[xml]
+lxml
+pydantic-settings
+PySide6
+# PySide6-uic
+# pyside6-uic
+requests

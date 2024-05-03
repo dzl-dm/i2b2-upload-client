@@ -1,0 +1,688 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>MainWindow</class>
+ <widget class="QMainWindow" name="MainWindow">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>800</width>
+    <height>600</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>DWH Client</string>
+  </property>
+  <property name="windowIcon">
+   <iconset>
+    <normaloff>../../resources/DzlLogoSymmetric.webp</normaloff>../../resources/DzlLogoSymmetric.webp</iconset>
+  </property>
+  <property name="styleSheet">
+   <string notr="true"/>
+  </property>
+  <widget class="QWidget" name="centralwidget">
+   <property name="contextMenuPolicy">
+    <enum>Qt::NoContextMenu</enum>
+   </property>
+   <widget class="QLabel" name="versionIndicatorLabel">
+    <property name="geometry">
+     <rect>
+      <x>640</x>
+      <y>520</y>
+      <width>151</width>
+      <height>20</height>
+     </rect>
+    </property>
+    <property name="toolTip">
+     <string>Hi</string>
+    </property>
+    <property name="text">
+     <string>Version label</string>
+    </property>
+    <property name="alignment">
+     <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+    </property>
+   </widget>
+   <widget class="QTabWidget" name="tabWidget">
+    <property name="geometry">
+     <rect>
+      <x>0</x>
+      <y>0</y>
+      <width>801</width>
+      <height>511</height>
+     </rect>
+    </property>
+    <property name="tabPosition">
+     <enum>QTabWidget::North</enum>
+    </property>
+    <property name="currentIndex">
+     <number>0</number>
+    </property>
+    <widget class="QWidget" name="localTab">
+     <attribute name="title">
+      <string>Local processing</string>
+     </attribute>
+     <widget class="QLabel" name="userInfoLabel">
+      <property name="geometry">
+       <rect>
+        <x>10</x>
+        <y>10</y>
+        <width>301</width>
+        <height>71</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>Please choose an XML fhir bundle to pseudonymize</string>
+      </property>
+      <property name="wordWrap">
+       <bool>true</bool>
+      </property>
+     </widget>
+     <widget class="QWidget" name="">
+      <property name="geometry">
+       <rect>
+        <x>10</x>
+        <y>130</y>
+        <width>771</width>
+        <height>36</height>
+       </rect>
+      </property>
+      <layout class="QGridLayout" name="gridLayout">
+       <item row="0" column="2">
+        <widget class="QPushButton" name="rawFhirFileInputPushButton">
+         <property name="text">
+          <string>Choose file...</string>
+         </property>
+        </widget>
+       </item>
+       <item row="0" column="0">
+        <widget class="QLabel" name="rawFhirInputLabel">
+         <property name="text">
+          <string>Input fhir bundle:</string>
+         </property>
+         <property name="alignment">
+          <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+         </property>
+        </widget>
+       </item>
+       <item row="0" column="1">
+        <widget class="QLabel" name="rawFhirfileInputText">
+         <property name="text">
+          <string>Drag &amp; drop...</string>
+         </property>
+        </widget>
+       </item>
+      </layout>
+     </widget>
+     <widget class="QWidget" name="">
+      <property name="geometry">
+       <rect>
+        <x>10</x>
+        <y>230</y>
+        <width>511</width>
+        <height>34</height>
+       </rect>
+      </property>
+      <layout class="QGridLayout" name="gridLayout_3">
+       <item row="0" column="0">
+        <widget class="QLabel" name="secretKeyLabel">
+         <property name="toolTip">
+          <string>setting: secret_key</string>
+         </property>
+         <property name="text">
+          <string>Pseudonymization key:</string>
+         </property>
+         <property name="alignment">
+          <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+         </property>
+        </widget>
+       </item>
+       <item row="0" column="1">
+        <widget class="QLineEdit" name="secretKeyPasswordEdit">
+         <property name="toolTip">
+          <string>setting: secret_key</string>
+         </property>
+         <property name="inputMask">
+          <string/>
+         </property>
+         <property name="text">
+          <string/>
+         </property>
+         <property name="echoMode">
+          <enum>QLineEdit::Password</enum>
+         </property>
+        </widget>
+       </item>
+      </layout>
+     </widget>
+     <widget class="QWidget" name="layoutWidget">
+      <property name="geometry">
+       <rect>
+        <x>10</x>
+        <y>180</y>
+        <width>771</width>
+        <height>36</height>
+       </rect>
+      </property>
+      <layout class="QGridLayout" name="gridLayout_2">
+       <item row="0" column="1">
+        <widget class="QLabel" name="dwhFhirfileOutputText">
+         <property name="text">
+          <string>Drag &amp; drop...</string>
+         </property>
+        </widget>
+       </item>
+       <item row="0" column="0">
+        <widget class="QLabel" name="dwhFhirOutputLabel">
+         <property name="text">
+          <string>Output fhir bundle:</string>
+         </property>
+         <property name="alignment">
+          <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+         </property>
+        </widget>
+       </item>
+       <item row="0" column="2">
+        <widget class="QPushButton" name="dwhFhirFileOutputPushButton">
+         <property name="text">
+          <string>Choose file...</string>
+         </property>
+        </widget>
+       </item>
+      </layout>
+     </widget>
+     <widget class="QPushButton" name="pseudonymizeButton">
+      <property name="geometry">
+       <rect>
+        <x>590</x>
+        <y>430</y>
+        <width>201</width>
+        <height>34</height>
+       </rect>
+      </property>
+      <property name="autoFillBackground">
+       <bool>false</bool>
+      </property>
+      <property name="styleSheet">
+       <string notr="true">font: italic; color: gray</string>
+      </property>
+      <property name="text">
+       <string>Pseudonymize</string>
+      </property>
+     </widget>
+     <widget class="QWidget" name="layoutWidget_2">
+      <property name="geometry">
+       <rect>
+        <x>10</x>
+        <y>80</y>
+        <width>771</width>
+        <height>36</height>
+       </rect>
+      </property>
+      <layout class="QGridLayout" name="gridLayout_4">
+       <item row="0" column="2">
+        <widget class="QPushButton" name="dsConfigFileInputPushButton">
+         <property name="text">
+          <string>Choose file...</string>
+         </property>
+        </widget>
+       </item>
+       <item row="0" column="0">
+        <widget class="QLabel" name="dsConfigLabel">
+         <property name="text">
+          <string>Datasource configuration file</string>
+         </property>
+         <property name="alignment">
+          <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+         </property>
+        </widget>
+       </item>
+       <item row="0" column="1">
+        <widget class="QLabel" name="dsConfigFileInputText">
+         <property name="text">
+          <string>datasource.xml</string>
+         </property>
+        </widget>
+       </item>
+      </layout>
+     </widget>
+     <widget class="QPushButton" name="generateFhirButton">
+      <property name="geometry">
+       <rect>
+        <x>370</x>
+        <y>430</y>
+        <width>201</width>
+        <height>34</height>
+       </rect>
+      </property>
+      <property name="autoFillBackground">
+       <bool>false</bool>
+      </property>
+      <property name="styleSheet">
+       <string notr="true">font: italic; color: gray</string>
+      </property>
+      <property name="text">
+       <string>Generate Fhir bundle</string>
+      </property>
+     </widget>
+    </widget>
+    <widget class="QWidget" name="dwhTab">
+     <attribute name="title">
+      <string>DWH processing</string>
+     </attribute>
+     <widget class="QLabel" name="userInfoLabel_2">
+      <property name="geometry">
+       <rect>
+        <x>20</x>
+        <y>20</y>
+        <width>461</width>
+        <height>41</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>Please enter your API connection details to connect to the server:</string>
+      </property>
+      <property name="wordWrap">
+       <bool>true</bool>
+      </property>
+     </widget>
+     <widget class="QWidget" name="layoutWidget_3">
+      <property name="geometry">
+       <rect>
+        <x>20</x>
+        <y>60</y>
+        <width>721</width>
+        <height>36</height>
+       </rect>
+      </property>
+      <layout class="QGridLayout" name="gridLayout_5">
+       <item row="0" column="1">
+        <widget class="QLineEdit" name="apiKeyPasswordEdit">
+         <property name="toolTip">
+          <string>setting: dwh_api_key</string>
+         </property>
+         <property name="inputMask">
+          <string/>
+         </property>
+         <property name="text">
+          <string/>
+         </property>
+         <property name="echoMode">
+          <enum>QLineEdit::Password</enum>
+         </property>
+         <property name="placeholderText">
+          <string>API key</string>
+         </property>
+        </widget>
+       </item>
+       <item row="0" column="0">
+        <widget class="QLineEdit" name="apiUrlEdit">
+         <property name="toolTip">
+          <string>setting: DWH_API_ENDPOINT</string>
+         </property>
+         <property name="inputMask">
+          <string/>
+         </property>
+         <property name="text">
+          <string/>
+         </property>
+         <property name="echoMode">
+          <enum>QLineEdit::Normal</enum>
+         </property>
+         <property name="placeholderText">
+          <string>API endpoint URL</string>
+         </property>
+        </widget>
+       </item>
+       <item row="0" column="2">
+        <widget class="QPushButton" name="apiConnectPushButton">
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
+         <property name="text">
+          <string>Connect...</string>
+         </property>
+        </widget>
+       </item>
+      </layout>
+     </widget>
+     <widget class="QWidget" name="layoutWidget_4">
+      <property name="geometry">
+       <rect>
+        <x>20</x>
+        <y>110</y>
+        <width>721</width>
+        <height>76</height>
+       </rect>
+      </property>
+      <layout class="QGridLayout" name="gridLayout_6">
+       <item row="0" column="3">
+        <widget class="QPushButton" name="dsFileInputPushButton">
+         <property name="text">
+          <string>Choose file...</string>
+         </property>
+        </widget>
+       </item>
+       <item row="0" column="2">
+        <widget class="QLineEdit" name="newDsFileEdit">
+         <property name="toolTip">
+          <string/>
+         </property>
+         <property name="inputMask">
+          <string/>
+         </property>
+         <property name="text">
+          <string/>
+         </property>
+         <property name="echoMode">
+          <enum>QLineEdit::Normal</enum>
+         </property>
+         <property name="placeholderText">
+          <string>DWH-ready FHIR bundle (already pseudonymized)</string>
+         </property>
+        </widget>
+       </item>
+       <item row="1" column="2">
+        <widget class="QLineEdit" name="newDsNameEdit">
+         <property name="toolTip">
+          <string>DS name (source_id)</string>
+         </property>
+         <property name="inputMask">
+          <string/>
+         </property>
+         <property name="text">
+          <string/>
+         </property>
+         <property name="echoMode">
+          <enum>QLineEdit::Normal</enum>
+         </property>
+         <property name="dragEnabled">
+          <bool>true</bool>
+         </property>
+         <property name="placeholderText">
+          <string>DS name (source_id)</string>
+         </property>
+        </widget>
+       </item>
+       <item row="1" column="3">
+        <widget class="QPushButton" name="newDsUploadPushButton">
+         <property name="toolTip">
+          <string>Uploads the file data, but does not add to database</string>
+         </property>
+         <property name="styleSheet">
+          <string notr="true">font: italic; color: gray</string>
+         </property>
+         <property name="text">
+          <string>Upload</string>
+         </property>
+        </widget>
+       </item>
+       <item row="0" column="1" rowspan="2">
+        <widget class="QLabel" name="newDsLabel">
+         <property name="toolTip">
+          <string>setting: secret_key</string>
+         </property>
+         <property name="text">
+          <string>Add new datasource (or replace existing):</string>
+         </property>
+         <property name="alignment">
+          <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+         </property>
+         <property name="wordWrap">
+          <bool>true</bool>
+         </property>
+        </widget>
+       </item>
+      </layout>
+     </widget>
+     <widget class="QComboBox" name="dsChooseComboBox">
+      <property name="geometry">
+       <rect>
+        <x>20</x>
+        <y>220</y>
+        <width>251</width>
+        <height>41</height>
+       </rect>
+      </property>
+      <property name="currentText">
+       <string/>
+      </property>
+     </widget>
+     <widget class="QLabel" name="dsChooseLabel">
+      <property name="geometry">
+       <rect>
+        <x>20</x>
+        <y>200</y>
+        <width>251</width>
+        <height>21</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>Choose existing DS to process:</string>
+      </property>
+     </widget>
+     <widget class="QTableWidget" name="dsStatusTableWidget">
+      <property name="geometry">
+       <rect>
+        <x>20</x>
+        <y>270</y>
+        <width>325</width>
+        <height>184</height>
+       </rect>
+      </property>
+      <property name="sizePolicy">
+       <sizepolicy hsizetype="Minimum" vsizetype="Expanding">
+        <horstretch>0</horstretch>
+        <verstretch>0</verstretch>
+       </sizepolicy>
+      </property>
+      <property name="minimumSize">
+       <size>
+        <width>250</width>
+        <height>150</height>
+       </size>
+      </property>
+      <property name="baseSize">
+       <size>
+        <width>0</width>
+        <height>0</height>
+       </size>
+      </property>
+      <property name="toolTip">
+       <string>Summary of selected source</string>
+      </property>
+      <property name="selectionMode">
+       <enum>QAbstractItemView::ExtendedSelection</enum>
+      </property>
+      <property name="selectionBehavior">
+       <enum>QAbstractItemView::SelectRows</enum>
+      </property>
+      <attribute name="horizontalHeaderVisible">
+       <bool>true</bool>
+      </attribute>
+      <attribute name="horizontalHeaderDefaultSectionSize">
+       <number>150</number>
+      </attribute>
+      <attribute name="horizontalHeaderStretchLastSection">
+       <bool>true</bool>
+      </attribute>
+      <attribute name="verticalHeaderVisible">
+       <bool>true</bool>
+      </attribute>
+      <attribute name="verticalHeaderStretchLastSection">
+       <bool>true</bool>
+      </attribute>
+      <row>
+       <property name="text">
+        <string>Source ID</string>
+       </property>
+      </row>
+      <row>
+       <property name="text">
+        <string>Status</string>
+       </property>
+      </row>
+      <row>
+       <property name="text">
+        <string>sourcesystem_cd</string>
+       </property>
+      </row>
+      <row>
+       <property name="text">
+        <string>Last activity</string>
+       </property>
+       <property name="toolTip">
+        <string>Most recent interaction, may not have updated database</string>
+       </property>
+      </row>
+      <row>
+       <property name="text">
+        <string>Last update</string>
+       </property>
+       <property name="toolTip">
+        <string>Most recent interaction which changed the i2b2 database</string>
+       </property>
+      </row>
+      <column>
+       <property name="text">
+        <string>Values</string>
+       </property>
+      </column>
+      <item row="0" column="0">
+       <property name="flags">
+        <set>ItemIsSelectable|ItemIsDragEnabled|ItemIsDropEnabled|ItemIsUserCheckable|ItemIsEnabled</set>
+       </property>
+      </item>
+      <item row="1" column="0">
+       <property name="flags">
+        <set>ItemIsSelectable|ItemIsDragEnabled|ItemIsDropEnabled|ItemIsUserCheckable|ItemIsEnabled</set>
+       </property>
+      </item>
+      <item row="2" column="0">
+       <property name="flags">
+        <set>ItemIsSelectable|ItemIsDragEnabled|ItemIsDropEnabled|ItemIsUserCheckable|ItemIsEnabled</set>
+       </property>
+      </item>
+      <item row="3" column="0">
+       <property name="flags">
+        <set>ItemIsSelectable|ItemIsDragEnabled|ItemIsDropEnabled|ItemIsUserCheckable|ItemIsEnabled</set>
+       </property>
+      </item>
+      <item row="4" column="0">
+       <property name="flags">
+        <set>ItemIsSelectable|ItemIsDragEnabled|ItemIsDropEnabled|ItemIsUserCheckable|ItemIsEnabled</set>
+       </property>
+      </item>
+     </widget>
+     <widget class="QWidget" name="horizontalLayoutWidget">
+      <property name="geometry">
+       <rect>
+        <x>280</x>
+        <y>210</y>
+        <width>461</width>
+        <height>51</height>
+       </rect>
+      </property>
+      <layout class="QHBoxLayout" name="horizontalLayout">
+       <item>
+        <widget class="QPushButton" name="showSourceInfoPushButton">
+         <property name="toolTip">
+          <string>Available only if source is in &quot;Uploaded&quot; state. Will process the uploaded file to update the database</string>
+         </property>
+         <property name="text">
+          <string>Show info</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QPushButton" name="showSourceErrorPushButton">
+         <property name="toolTip">
+          <string>Available only if source is in &quot;Uploaded&quot; state. Will process the uploaded file to update the database</string>
+         </property>
+         <property name="text">
+          <string>Show errors</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QPushButton" name="updateSourcePushButton">
+         <property name="toolTip">
+          <string>Available only if source is in &quot;Uploaded&quot; state. Will process the uploaded file to update the database</string>
+         </property>
+         <property name="text">
+          <string>Update source</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QPushButton" name="deleteSourcePushButton">
+         <property name="toolTip">
+          <string>Remove all observations with matching sourcesystem_cd</string>
+         </property>
+         <property name="text">
+          <string>Delete source</string>
+         </property>
+        </widget>
+       </item>
+      </layout>
+     </widget>
+     <widget class="QLabel" name="sourceInfoErrorLabel">
+      <property name="geometry">
+       <rect>
+        <x>360</x>
+        <y>280</y>
+        <width>161</width>
+        <height>21</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>Source info/error</string>
+      </property>
+     </widget>
+     <widget class="QTextBrowser" name="sourceInfoErrorBrowser">
+      <property name="geometry">
+       <rect>
+        <x>360</x>
+        <y>300</y>
+        <width>421</width>
+        <height>151</height>
+       </rect>
+      </property>
+     </widget>
+     <widget class="QPushButton" name="reloadStatusPushButton">
+      <property name="geometry">
+       <rect>
+        <x>20</x>
+        <y>270</y>
+        <width>121</width>
+        <height>31</height>
+       </rect>
+      </property>
+      <property name="toolTip">
+       <string>Available only if source is in &quot;Uploaded&quot; state. Will process the uploaded file to update the database</string>
+      </property>
+      <property name="text">
+       <string>Reload status</string>
+      </property>
+     </widget>
+    </widget>
+   </widget>
+  </widget>
+  <widget class="QMenuBar" name="menubar">
+   <property name="geometry">
+    <rect>
+     <x>0</x>
+     <y>0</y>
+     <width>800</width>
+     <height>30</height>
+    </rect>
+   </property>
+  </widget>
+  <widget class="QStatusBar" name="statusbar"/>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>

@@ -1,0 +1,201 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>MainWindow</class>
+ <widget class="QMainWindow" name="MainWindow">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>800</width>
+    <height>600</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>DWH Client</string>
+  </property>
+  <property name="windowIcon">
+   <iconset>
+    <normaloff>../../../../git/applications/i2b2-upload-client/resources/DzlLogoSymmetric.webp</normaloff>../../../../git/applications/i2b2-upload-client/resources/DzlLogoSymmetric.webp</iconset>
+  </property>
+  <widget class="QWidget" name="centralwidget">
+   <widget class="QLabel" name="versionIndicatorLabel">
+    <property name="geometry">
+     <rect>
+      <x>640</x>
+      <y>520</y>
+      <width>151</width>
+      <height>20</height>
+     </rect>
+    </property>
+    <property name="toolTip">
+     <string>Hi</string>
+    </property>
+    <property name="text">
+     <string>Version label</string>
+    </property>
+    <property name="alignment">
+     <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+    </property>
+   </widget>
+   <widget class="QLabel" name="userInfoLabel">
+    <property name="geometry">
+     <rect>
+      <x>20</x>
+      <y>50</y>
+      <width>301</width>
+      <height>71</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Please choose an XML fhir bundle to pseudonymize</string>
+    </property>
+    <property name="wordWrap">
+     <bool>true</bool>
+    </property>
+   </widget>
+   <widget class="QPushButton" name="pseudonymizeButton">
+    <property name="geometry">
+     <rect>
+      <x>590</x>
+      <y>480</y>
+      <width>201</width>
+      <height>34</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Pseudonymize</string>
+    </property>
+   </widget>
+   <widget class="QWidget" name="layoutWidget">
+    <property name="geometry">
+     <rect>
+      <x>10</x>
+      <y>180</y>
+      <width>771</width>
+      <height>36</height>
+     </rect>
+    </property>
+    <layout class="QGridLayout" name="gridLayout_2">
+     <item row="0" column="0">
+      <widget class="QLabel" name="dwhFhirOutputLabel">
+       <property name="text">
+        <string>Output fhir bundle:</string>
+       </property>
+       <property name="alignment">
+        <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+       </property>
+      </widget>
+     </item>
+     <item row="0" column="1">
+      <widget class="QLabel" name="dwhFhirfileOutputText">
+       <property name="text">
+        <string>Drag &amp; drop...</string>
+       </property>
+      </widget>
+     </item>
+     <item row="0" column="2">
+      <widget class="QPushButton" name="dwhFhirFileOutputPushButton">
+       <property name="text">
+        <string>Choose file...</string>
+       </property>
+      </widget>
+     </item>
+    </layout>
+   </widget>
+   <widget class="QWidget" name="">
+    <property name="geometry">
+     <rect>
+      <x>10</x>
+      <y>130</y>
+      <width>771</width>
+      <height>36</height>
+     </rect>
+    </property>
+    <layout class="QGridLayout" name="gridLayout">
+     <item row="0" column="0">
+      <widget class="QLabel" name="rawFhirInputLabel">
+       <property name="text">
+        <string>Input fhir bundle:</string>
+       </property>
+       <property name="alignment">
+        <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+       </property>
+      </widget>
+     </item>
+     <item row="0" column="1">
+      <widget class="QLabel" name="rawFhirfileInputText">
+       <property name="text">
+        <string>Drag &amp; drop...</string>
+       </property>
+      </widget>
+     </item>
+     <item row="0" column="2">
+      <widget class="QPushButton" name="rawFhirFileInputPushButton">
+       <property name="text">
+        <string>Choose file...</string>
+       </property>
+      </widget>
+     </item>
+    </layout>
+   </widget>
+   <widget class="QWidget" name="">
+    <property name="geometry">
+     <rect>
+      <x>10</x>
+      <y>230</y>
+      <width>511</width>
+      <height>34</height>
+     </rect>
+    </property>
+    <layout class="QGridLayout" name="gridLayout_3">
+     <item row="0" column="0">
+      <widget class="QLabel" name="secretKeyLabel">
+       <property name="toolTip">
+        <string>setting: secret_key</string>
+       </property>
+       <property name="text">
+        <string>Pseudonymization key:</string>
+       </property>
+       <property name="alignment">
+        <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+       </property>
+      </widget>
+     </item>
+     <item row="0" column="1">
+      <widget class="KPasswordLineEdit" name="secretKeyPasswordEdit">
+       <property name="password">
+        <string/>
+       </property>
+       <property name="clearButtonEnabled">
+        <bool>false</bool>
+       </property>
+       <property name="echoMode">
+        <enum>QLineEdit::Password</enum>
+       </property>
+      </widget>
+     </item>
+    </layout>
+   </widget>
+  </widget>
+  <widget class="QMenuBar" name="menubar">
+   <property name="geometry">
+    <rect>
+     <x>0</x>
+     <y>0</y>
+     <width>800</width>
+     <height>30</height>
+    </rect>
+   </property>
+  </widget>
+  <widget class="QStatusBar" name="statusbar"/>
+ </widget>
+ <customwidgets>
+  <customwidget>
+   <class>KPasswordLineEdit</class>
+   <extends>QWidget</extends>
+   <header>kpasswordlineedit.h</header>
+  </customwidget>
+ </customwidgets>
+ <resources/>
+ <connections/>
+</ui>
