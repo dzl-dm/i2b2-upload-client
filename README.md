@@ -96,3 +96,22 @@ The output is still a fhir bundle in XML format, simply with the changes outline
 The DWH presents an API which the client can interface with. A simple way to interact with the API is to use cURL, but most programming languages offer a network library which could be used to communicate.
 
 > NOTE: This stage requires the cURL command to be available, which is included in `git for windows`
+
+## Developer notes
+The project can be used as 3 separate "scripts" to perform each part, or using an interface to combine them which is more intuative for the user.
+
+### The GUI
+* Design in Qt Designer - a graphical tool for building Qt framework based interfaces.
+* Convert to a python class with a command. 
+* Code actions in window class inheriting from generated class.
+* Reference the same code used for running individual "scripts".
+* Package as python app (user will need python and to install libraries)
+* Package as binary
+    * Fat binary includes all dependencies
+    * Normal binary requires dependencies from the user
+
+Convert Qt designer's `.ui` file to python class:
+```sh
+## Must be in venv so pyside6-uic is available
+pyside6-uic src/gui/mainWindow.ui -o src/gui/ui_mainwindow.py
+```

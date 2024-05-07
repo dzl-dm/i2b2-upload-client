@@ -28,7 +28,7 @@ class AppMeta():
     """ Purely constants """
     app_name: str = "DWH client"
     app_description: str = "A PySide6 (QT6) interactive GUI to upload fhir bundle to DWH server API"
-    app_version: str = "0.0.1-alpha"
+    app_version: str = "0.0.1-alpha-2"
 
 ## ---------------- ##
 ## Create  settings ##
@@ -38,7 +38,8 @@ class Settings(BaseSettings):
     log_level: str = "WARNING"
     log_format: str = "[%(asctime)s] {%(name)s/%(module)s:%(lineno)d (%(funcName)s)} %(levelname)s - %(message)s"
     secret_key: str = "ChangeMe"
-    DWH_API_ENDPOINT: str = "http://localhost/api"
+    # DWH_API_ENDPOINT: str = "http://localhost/api"
+    DWH_API_ENDPOINT: str = "https://data.dzl.de/api"
     dwh_api_key: str = "ChangeMe"
     compatible_java: str = "java"
 settings = Settings()
@@ -73,9 +74,16 @@ class DwhClientWindow(QMainWindow, Ui_MainWindow):
         self.versionIndicatorLabel.setToolTip(AppMeta().app_description)
         self.setWindowIcon(PySide6.QtGui.QIcon(os.path.join(projectRoot, 'resources', 'DzlLogoSymmetric.webp')))
         ## Button actions (LOCAL) - can't I define these in the QT Designer GUI via slots and signals?
-        self.dsConfigFileInputPushButton.clicked.connect(self.dsConfigFilePicker_clicked)
-        self.rawFhirFileInputPushButton.clicked.connect(self.rawFhirFilePicker_clicked)
-        self.dwhFhirFileOutputPushButton.clicked.connect(self.dwhFhirFilePicker_clicked)
+        self.dsConfigFileInputPushButton.clicked.connect(self.dsConfigFilePickerClicked)
+        self.dsConfigFileText.textChanged.connect(self.dsConfigFileChanged)
+        self.rawFhirFileInputPushButton.clicked.connect(self.rawFhirFilePickerClicked)
+        self.rawFhirFileText.textChanged.connect(self.rawFhirFileChanged)
+        self.generateFhirButton.clicked.connect(self.generateFhir)
+        self.dwhFhirFileOutputPushButton.clicked.connect(self.dwhFhirFilePickerClicked)
+        self.dwhFhirFileText.textChanged.connect(self.dwhFhirFileChanged)
+        self.secretKeyPasswordEdit.textChanged.connect(self.secretKeyPasswordChanged)
+        self.pseudonymizeButton.clicked.connect(self.pseudonymizeFhir)
+
         if settings.secret_key != "ChangeMe":
             self.secretKeyPasswordEdit.setText(settings.secret_key)
         # self.pseudonymizeButton.hover.connect(self.pseudonymizeButton_hover)
@@ -83,13 +91,14 @@ class DwhClientWindow(QMainWindow, Ui_MainWindow):
         self.pseudonymizeButton.installEventFilter(self)
         ## Button actions (DWH) - can't I define these in the QT Designer GUI via slots and signals?
         self.apiConnectPushButton.clicked.connect(self.getDsList)
-        self.dsFileInputPushButton.clicked.connect(self.dwhUploadFhirFilePicker_clicked)
+        self.dsFileInputPushButton.clicked.connect(self.dwhUploadFhirFilePickerClicked)
         # self.newDsUploadPushButton.clicked.connect(self.uploadSource)
         self.newDsUploadPushButton.installEventFilter(self)
         self.apiUrlEdit.setText(settings.DWH_API_ENDPOINT)
         if settings.dwh_api_key != "ChangeMe":
             self.apiKeyPasswordEdit.setText(settings.dwh_api_key)
         self.dsChooseComboBox.currentTextChanged.connect(self.dsSelected)
+        self.newDsUploadPushButton.clicked.connect(self.uploadSource)
         self.deleteSourcePushButton.clicked.connect(self.deleteDs)
         self.updateSourcePushButton.clicked.connect(self.processDs)
         self.showSourceInfoPushButton.clicked.connect(self.showDsInfo)
@@ -109,47 +118,61 @@ class DwhClientWindow(QMainWindow, Ui_MainWindow):
         return False
 
     ## LOCAL processing
-    def dsConfigFilePicker_clicked(self):
+    def dsConfigFilePickerClicked(self):
         options = QFileDialog.Options()
         fileName, _ = QFileDialog.getOpenFileName(self,"QFileDialog.getOpenFileName()", "","All Files (*)", options=options)
         if fileName:
-            self.dsConfigFileInputText.setText(fileName)
-    def rawFhirFilePicker_clicked(self):
+            self.dsConfigFileText.setText(fileName)
+    def dsConfigFileChanged(self):
+        """ Try to auto-fill the raw fhir based on path of datasource.xml """
+        if self.rawFhirFileText.text() == "":
+            logger.debug("Adding assumed raw fhir file path...")
+            assumedRawFhirFn = os.path.join(os.path.dirname(self.dsConfigFileText.text()), 'client-output', 'fhir-bundle-raw.xml')
+            self.rawFhirFileText.setText(assumedRawFhirFn)
+    def rawFhirFilePickerClicked(self):
         options = QFileDialog.Options()
         fileName, _ = QFileDialog.getOpenFileName(self,"QFileDialog.getOpenFileName()", "","All Files (*)", options=options)
         if fileName:
-            self.rawFhirfileInputText.setText(fileName)
-        assumedOutFn = os.path.basename(fileName).replace('-raw', '-dwh')
-        assumedOutPath = os.path.join(os.path.dirname(fileName), assumedOutFn)
-        self.newDsFileEdit.setText(assumedOutPath)
-        if self.dwhFhirfileOutputText.text() == "":
-            logger.debug("Adding assumed output file path...")
-            if assumedOutFn != os.path.basename(fileName):
-                self.dwhFhirfileOutputText.setText(assumedOutPath)
-    def dwhFhirFilePicker_clicked(self):
+            self.rawFhirFileText.setText(fileName)
+    def rawFhirFileChanged(self):
+        """ Try to enable generate fhir button and auto-fill dwh fhir """
+        if self.dwhFhirFileText.text() == "":
+            logger.debug("Adding assumed dwh fhir file path...")
+            assumedDwhFhirFn = os.path.join(os.path.dirname(self.rawFhirFileText.text()), os.path.basename(self.rawFhirFileText.text()).replace('-raw', '-dwh'))
+            self.dwhFhirFileText.setText(assumedDwhFhirFn)
+        self.generateFhirButton_hover()
+    def dwhFhirFilePickerClicked(self):
         options = QFileDialog.Options()
         fileName, _ = QFileDialog.getOpenFileName(self,"QFileDialog.getOpenFileName()", "","All Files (*)", options=options)
         if fileName:
-            self.dwhFhirfileOutputText.setText(fileName)
+            self.dwhFhirFileText.setText(fileName)
+    def dwhFhirFileChanged(self):
+        """ Try to enable pseudonymize button """
+        self.pseudonymizeButton_hover()
+    def secretKeyPasswordChanged(self):
+        """ Try to enable pseudonymize button """
+        self.pseudonymizeButton_hover()
     def generateFhirButton_hover(self):
         """ Verify and enable/disable click action """
         logger.info("Verifying and enabling/disabling generate fhir possibility")
         if self.verifyGeneratePreparedness():
-            try: self.generateFhirButton.clicked.disconnect()
-            except Exception: pass
-            self.generateFhirButton.clicked.connect(self.generateFhir)
+            # try: self.generateFhirButton.clicked.disconnect()
+            # except Exception: pass
+            # self.generateFhirButton.clicked.connect(self.generateFhir)
+            self.generateFhirButton.setEnabled(True)
             self.generateFhirButton.setStyleSheet("font: bold; color: green")
         else:
-            try: self.generateFhirButton.clicked.disconnect()
-            except Exception: pass
+            # try: self.generateFhirButton.clicked.disconnect()
+            # except Exception: pass
+            self.generateFhirButton.setEnabled(False)
             self.generateFhirButton.setStyleSheet("font: italic; color: gray")
     def verifyGeneratePreparedness(self) -> bool:
         """ Check we have in/out files """
-        logger.info("Checking... %s, %s", self.dsConfigFileInputText.text(), self.rawFhirfileInputText.text())
-        if not os.path.exists(self.dsConfigFileInputText.text()):
+        logger.info("Checking... %s, %s", self.dsConfigFileText.text(), self.rawFhirFileText.text())
+        if not os.path.exists(self.dsConfigFileText.text()):
             logger.warning("Config input test failed")
             return False
-        if not os.path.isdir(os.path.dirname(self.rawFhirfileInputText.text())):
+        if not os.path.isdir(os.path.dirname(self.rawFhirFileText.text())):
             logger.warning("Fhir output test failed")
             return False
         return True
@@ -157,8 +180,9 @@ class DwhClientWindow(QMainWindow, Ui_MainWindow):
         """ Call the exisiting "script" style java code """
         logger.info("Generating fhir started...")
         ## Don't let user click it again while its running
-        try: self.generateFhirButton.clicked.disconnect()
-        except Exception: pass
+        # try: self.generateFhirButton.clicked.disconnect()
+        # except Exception: pass
+        self.generateFhirButton.setEnabled(False)
         ## NOTE: Can't update while running this (both synchronus methonds on the main window object)
         # self.pseudonymizeButton.setStyleSheet("background-color: yellow; font: italic; color: black;")
         # self.pseudonymizeButton.setText("Processing...")
@@ -172,12 +196,16 @@ class DwhClientWindow(QMainWindow, Ui_MainWindow):
         # libsDir = os.path.abspath(os.path.join(projectRoot, 'resources', 'lib'))
         libsDir = os.path.abspath(os.path.join(projectRoot, 'resources', 'lib'))
         libs = [os.path.join(libsDir, file) for file in next(os.walk(libsDir), (None, None, []))[2] if file.endswith(".jar")] # [] if no file
-        javaCp = ':'.join(libs)
+        javaCpSep = ':'
+        if os.name == 'nt':
+            ## Windows class path separator
+            javaCpSep = ';'
+        javaCp = javaCpSep.join(libs)
         ## Actual work - write streamed output to file
-        with open(self.rawFhirfileInputText.text(), 'w') as rawFhir:
+        with open(self.rawFhirFileText.text(), 'w') as rawFhir:
             logger.info("Running java subprocess.Popen to generate fhir")
-            proc = subprocess.Popen([settings.compatible_java,'-Dfile.encoding=UTF-8', '-cp', javaCp, 'de.sekmi.histream.etl.ExportFHIR', self.dsConfigFileInputText.text()], stdout=subprocess.PIPE)
-            # proc = subprocess.Popen(['/usr/lib/jvm/java-8-openjdk/jre/bin/java','-Dfile.encoding=UTF-8', '-cp', javaCp, 'de.sekmi.histream.etl.ExportFHIR', self.dsConfigFileInputText.text()], stdout=subprocess.PIPE)
+            proc = subprocess.Popen([settings.compatible_java,'-Dfile.encoding=UTF-8', '-cp', javaCp, 'de.sekmi.histream.etl.ExportFHIR', self.dsConfigFileText.text()], stdout=subprocess.PIPE)
+            # proc = subprocess.Popen(['/usr/lib/jvm/java-8-openjdk/jre/bin/java','-Dfile.encoding=UTF-8', '-cp', javaCp, 'de.sekmi.histream.etl.ExportFHIR', self.dsConfigFileText.text()], stdout=subprocess.PIPE)
             while True:
                 line = proc.stdout.readline()
                 if not line:
@@ -189,22 +217,24 @@ class DwhClientWindow(QMainWindow, Ui_MainWindow):
         """ Verify and enable/disable click action """
         logger.info("Verifying and enabling/disabling pseudonymisation possibility")
         if self.verifyPseudonymisationPreparedness():
-            try: self.pseudonymizeButton.clicked.disconnect()
-            except Exception: pass
-            self.pseudonymizeButton.clicked.connect(self.pseudonymizeFhir)
+            # try: self.pseudonymizeButton.clicked.disconnect()
+            # except Exception: pass
+            # self.pseudonymizeButton.clicked.connect(self.pseudonymizeFhir)
+            self.pseudonymizeButton.setEnabled(True)
             self.pseudonymizeButton.setStyleSheet("font: bold; color: green")
         else:
             # logger.warning("Disconnecting... %s", self.pseudonymizeButton.clicked.connect())
-            try: self.pseudonymizeButton.clicked.disconnect()
-            except Exception: pass
+            # try: self.pseudonymizeButton.clicked.disconnect()
+            # except Exception: pass
+            self.pseudonymizeButton.setEnabled(False)
             self.pseudonymizeButton.setStyleSheet("font: italic; color: gray")
     def verifyPseudonymisationPreparedness(self) -> bool:
         """ Check we have in/out files and a secret_key """
-        logger.info("Checking... %s, %s, %s", self.rawFhirfileInputText.text(), self.dwhFhirfileOutputText.text(), self.secretKeyPasswordEdit.text())
-        if not os.path.exists(self.rawFhirfileInputText.text()):
+        logger.info("Checking... %s, %s, <secret_key>", self.rawFhirFileText.text(), self.dwhFhirFileText.text())
+        if not os.path.exists(self.rawFhirFileText.text()):
             logger.warning("Input test failed")
             return False
-        if not os.path.isdir(os.path.dirname(self.dwhFhirfileOutputText.text())):
+        if not os.path.isdir(os.path.dirname(self.dwhFhirFileText.text())):
             logger.warning("Output test failed")
             return False
         if self.secretKeyPasswordEdit.text() is None or len(self.secretKeyPasswordEdit.text()) < 4 or self.secretKeyPasswordEdit.text() in ["", "ChangeMe"]:
@@ -214,11 +244,12 @@ class DwhClientWindow(QMainWindow, Ui_MainWindow):
     def pseudonymizeFhir(self):
         """ Call the exisiting "script" style python code """
         logger.info("Pseudonymisation started...")
-        try: self.pseudonymizeButton.clicked.disconnect()
-        except Exception: pass
+        # try: self.pseudonymizeButton.clicked.disconnect()
+        # except Exception: pass
+        self.pseudonymizeButton.setEnabled(False)
         ## Stream raw fhir as input and write output as stream from streamed stdout
-        with open(self.rawFhirfileInputText.text(), 'r') as rawFhir:
-            with open(self.dwhFhirfileOutputText.text(), 'w') as dwhFhir:
+        with open(self.rawFhirFileText.text(), 'r') as rawFhir:
+            with open(self.dwhFhirFileText.text(), 'w') as dwhFhir:
                 psyeudonymEnv = os.environ.copy()
                 psyeudonymEnv['secret_key'] = self.secretKeyPasswordEdit.text()
                 pseudonymizationScript = os.path.join(projectRoot, 'src', 'stream-pseudonymization.py')
@@ -232,7 +263,7 @@ class DwhClientWindow(QMainWindow, Ui_MainWindow):
         logger.info("Pseudonymisation complete")
 
     ## DWH processing
-    def dwhUploadFhirFilePicker_clicked(self):
+    def dwhUploadFhirFilePickerClicked(self):
         options = QFileDialog.Options()
         fileName, _ = QFileDialog.getOpenFileName(self,"QFileDialog.getOpenFileName()", "","All Files (*)", options=options)
         if fileName:
@@ -245,13 +276,15 @@ class DwhClientWindow(QMainWindow, Ui_MainWindow):
         """ Verify and enable/disable click action """
         logger.info("Verifying and enabling/disabling upload possibility")
         if self.verifyUploadPreparedness():
-            try: self.newDsUploadPushButton.clicked.disconnect()
-            except Exception: pass
-            self.newDsUploadPushButton.clicked.connect(self.uploadSource)
+            # try: self.newDsUploadPushButton.clicked.disconnect()
+            # except Exception: pass
+            # self.newDsUploadPushButton.clicked.connect(self.uploadSource)
+            self.newDsUploadPushButton.setEnabled(False)
             self.newDsUploadPushButton.setStyleSheet("font: bold; color: green")
         else:
-            try: self.newDsUploadPushButton.clicked.disconnect()
-            except Exception: pass
+            # try: self.newDsUploadPushButton.clicked.disconnect()
+            # except Exception: pass
+            self.newDsUploadPushButton.setEnabled(False)
             self.newDsUploadPushButton.setStyleSheet("font: italic; color: gray")
     def verifyUploadPreparedness(self) -> bool:
         """ Check we have a real files and source_id no illegal chars """
@@ -285,8 +318,13 @@ class DwhClientWindow(QMainWindow, Ui_MainWindow):
 
     def dsSelected(self, source_id: str):
         """ Update selected DS """
-        self.selectedSourceId = source_id
-        self.showCurrentSourceStatus()
+        logger.info("Updating source: %s", source_id)
+        if not source_id:
+            self.selectedSourceId = None
+        else:
+            self.selectedSourceId = source_id
+        if self.selectedSourceId is not None:
+            self.showCurrentSourceStatus()
     def showCurrentSourceStatus(self):
         """ Show user status of selected source """
         dsStatus = api_processing.sourceStatus(self.selectedSourceId)

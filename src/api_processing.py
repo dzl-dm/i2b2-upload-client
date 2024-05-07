@@ -77,19 +77,19 @@ def deleteSource(source_id: str) -> str:
     if response.status_code == 202:
         return "Accepted request, processing...\nPlease refresh status to check progress"
     else:
-        return f"Error: Something unexpected happedned: {response.status_code: response.content}"
+        return f"Error: Something unexpected happedned: {response.status_code}: {response.content}"
 
 def uploadSource(source_id: str, sourceFhirBundlePath: str) -> str:
     """ Call endpoint """
     logger.debug("Connecting to api: %s", settings.DWH_API_ENDPOINT)
     url = f'{settings.DWH_API_ENDPOINT.rstrip("/")}/datasource/{source_id}/fhir-bundle'
-    files = {'file': ('fhir_bundle', open(sourceFhirBundlePath, 'rb'))}
+    files = {'fhir_bundle': open(sourceFhirBundlePath, 'rb')}
     headers = {'x-api-key': settings.dwh_api_key}
     response = requests.put(url, files=files, headers=headers)
     if response.status_code == 204:
         return "Uploading...\nPlease refresh status to check progress (If this is a new source, refresh list first with the API connect button)"
     else:
-        return f"Error: Something unexpected happedned: {response.status_code: response.content}"
+        return f"Error: Something unexpected happedned: {response.status_code}: {response.content}"
 
 def processSource(source_id: str) -> str:
     """ Call endpoint """
@@ -98,7 +98,7 @@ def processSource(source_id: str) -> str:
     if response.status_code == 202:
         return "Accepted request, processing...\nPlease refresh status to check progress"
     else:
-        return f"Error: Something unexpected happedned: {response.status_code: response.content}"
+        return f"Error: Something unexpected happedned: {response.status_code}: {response.content}"
 
 ## When called as script (not run if imported as module):
 if __name__ == "__main__":

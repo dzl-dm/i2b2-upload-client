@@ -1,8 +1,6 @@
-fhir.resources
-fhir.resources[xml]
-lxml
-pydantic-settings
+## The GUI also needs the requitements from ../requirements.txt
 PySide6
+PySide6_Addons
+PySide6_Essentials
 # PySide6-uic
 # pyside6-uic
-requests

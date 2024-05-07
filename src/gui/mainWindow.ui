@@ -78,7 +78,7 @@
        <bool>true</bool>
       </property>
      </widget>
-     <widget class="QWidget" name="">
+     <widget class="QWidget" name="layoutWidget">
       <property name="geometry">
        <rect>
         <x>10</x>
@@ -88,6 +88,19 @@
        </rect>
       </property>
       <layout class="QGridLayout" name="gridLayout">
+       <item row="0" column="0">
+        <widget class="QLabel" name="rawFhirInputLabel">
+         <property name="toolTip">
+          <string>Output of generation, input for pseudonymization</string>
+         </property>
+         <property name="text">
+          <string>RAW fhir bundle:</string>
+         </property>
+         <property name="alignment">
+          <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+         </property>
+        </widget>
+       </item>
        <item row="0" column="2">
         <widget class="QPushButton" name="rawFhirFileInputPushButton">
          <property name="text">
@@ -95,26 +108,12 @@
          </property>
         </widget>
        </item>
-       <item row="0" column="0">
-        <widget class="QLabel" name="rawFhirInputLabel">
-         <property name="text">
-          <string>Input fhir bundle:</string>
-         </property>
-         <property name="alignment">
-          <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-         </property>
-        </widget>
-       </item>
        <item row="0" column="1">
-        <widget class="QLabel" name="rawFhirfileInputText">
-         <property name="text">
-          <string>Drag &amp; drop...</string>
-         </property>
-        </widget>
+        <widget class="QLineEdit" name="rawFhirFileText"/>
        </item>
       </layout>
      </widget>
-     <widget class="QWidget" name="">
+     <widget class="QWidget" name="layoutWidget">
       <property name="geometry">
        <rect>
         <x>10</x>
@@ -165,23 +164,6 @@
        </rect>
       </property>
       <layout class="QGridLayout" name="gridLayout_2">
-       <item row="0" column="1">
-        <widget class="QLabel" name="dwhFhirfileOutputText">
-         <property name="text">
-          <string>Drag &amp; drop...</string>
-         </property>
-        </widget>
-       </item>
-       <item row="0" column="0">
-        <widget class="QLabel" name="dwhFhirOutputLabel">
-         <property name="text">
-          <string>Output fhir bundle:</string>
-         </property>
-         <property name="alignment">
-          <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-         </property>
-        </widget>
-       </item>
        <item row="0" column="2">
         <widget class="QPushButton" name="dwhFhirFileOutputPushButton">
          <property name="text">
@@ -189,9 +171,28 @@
          </property>
         </widget>
        </item>
+       <item row="0" column="0">
+        <widget class="QLabel" name="dwhFhirOutputLabel">
+         <property name="toolTip">
+          <string>Pseudonymized data, ready for DWH upload</string>
+         </property>
+         <property name="text">
+          <string>DWH fhir bundle:</string>
+         </property>
+         <property name="alignment">
+          <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+         </property>
+        </widget>
+       </item>
+       <item row="0" column="1">
+        <widget class="QLineEdit" name="dwhFhirFileText"/>
+       </item>
       </layout>
      </widget>
      <widget class="QPushButton" name="pseudonymizeButton">
+      <property name="enabled">
+       <bool>false</bool>
+      </property>
       <property name="geometry">
        <rect>
         <x>590</x>
@@ -199,6 +200,9 @@
         <width>201</width>
         <height>34</height>
        </rect>
+      </property>
+      <property name="toolTip">
+       <string>You must specify RAW and DWH files as well as a pseudonymization key</string>
       </property>
       <property name="autoFillBackground">
        <bool>false</bool>
@@ -238,8 +242,8 @@
         </widget>
        </item>
        <item row="0" column="1">
-        <widget class="QLabel" name="dsConfigFileInputText">
-         <property name="text">
+        <widget class="QLineEdit" name="dsConfigFileText">
+         <property name="placeholderText">
           <string>datasource.xml</string>
          </property>
         </widget>
@@ -247,6 +251,9 @@
       </layout>
      </widget>
      <widget class="QPushButton" name="generateFhirButton">
+      <property name="enabled">
+       <bool>false</bool>
+      </property>
       <property name="geometry">
        <rect>
         <x>370</x>
@@ -254,6 +261,9 @@
         <width>201</width>
         <height>34</height>
        </rect>
+      </property>
+      <property name="toolTip">
+       <string>You must specify config and RAW files</string>
       </property>
       <property name="autoFillBackground">
        <bool>false</bool>
@@ -369,7 +379,7 @@
        <item row="0" column="2">
         <widget class="QLineEdit" name="newDsFileEdit">
          <property name="toolTip">
-          <string/>
+          <string>DWH-ready FHIR bundle (already pseudonymized)</string>
          </property>
          <property name="inputMask">
           <string/>
@@ -423,7 +433,7 @@
        <item row="0" column="1" rowspan="2">
         <widget class="QLabel" name="newDsLabel">
          <property name="toolTip">
-          <string>setting: secret_key</string>
+          <string/>
          </property>
          <property name="text">
           <string>Add new datasource (or replace existing):</string>
@@ -590,7 +600,7 @@
        <item>
         <widget class="QPushButton" name="showSourceInfoPushButton">
          <property name="toolTip">
-          <string>Available only if source is in &quot;Uploaded&quot; state. Will process the uploaded file to update the database</string>
+          <string>Always available after the first upload and processing</string>
          </property>
          <property name="text">
           <string>Show info</string>
@@ -600,7 +610,7 @@
        <item>
         <widget class="QPushButton" name="showSourceErrorPushButton">
          <property name="toolTip">
-          <string>Available only if source is in &quot;Uploaded&quot; state. Will process the uploaded file to update the database</string>
+          <string>Available only if source encountered an error during processing</string>
          </property>
          <property name="text">
           <string>Show errors</string>
@@ -651,6 +661,9 @@
         <height>151</height>
        </rect>
       </property>
+      <property name="toolTip">
+       <string>Feedback on the processing</string>
+      </property>
      </widget>
      <widget class="QPushButton" name="reloadStatusPushButton">
       <property name="geometry">
@@ -662,7 +675,7 @@
        </rect>
       </property>
       <property name="toolTip">
-       <string>Available only if source is in &quot;Uploaded&quot; state. Will process the uploaded file to update the database</string>
+       <string>Check status after uploading or processing a source</string>
       </property>
       <property name="text">
        <string>Reload status</string>
