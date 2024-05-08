@@ -12,16 +12,20 @@ from pydantic_settings import BaseSettings
 import requests
 import sys
 
+class AppMeta():
+    """ Purely constants """
+    app_name: str = "DWH client - API processing"
+    app_description: str = "Can be used as scrip or module. Allows all API interactions."
+    app_name: str = "0.0.2"
+
 ## ---------------- ##
 ## Create  settings ##
 ## ---------------- ##
 class Settings(BaseSettings):
     """ The variables defined here will be taken from env vars if available and matching the type hint """
-    app_name: str = "DWH fhir-bundle patient pseudonymization"
-    app_description: str = "Pseudonymize patients in an xml fhir-bundle"
     log_level: str = "WARNING"
     log_format: str = "[%(asctime)s] {%(name)s/%(module)s:%(lineno)d (%(funcName)s)} %(levelname)s - %(message)s"
-    DWH_API_ENDPOINT: str = "http://localhost/api"
+    DWH_API_ENDPOINT: str = "https://data.dzl.de/api"
     dwh_api_key: str = "ChangeMe"
 settings = Settings()
 
@@ -29,9 +33,9 @@ settings = Settings()
 formatter = logging.Formatter(settings.log_format)
 logging.basicConfig(format=settings.log_format)
 ## Set app's logger level and format...
-logger = logging.getLogger(settings.app_name)
+logger = logging.getLogger(AppMeta.app_name)
 logger.setLevel(settings.log_level)
-logger.warning("Logging loaded with default configuration")
+logger.debug("Logging loaded with default configuration")
 
 def listDwhSources() -> list:
     """ Convert the response into a plain list """
@@ -83,6 +87,9 @@ def uploadSource(source_id: str, sourceFhirBundlePath: str) -> str:
     """ Call endpoint """
     logger.debug("Connecting to api: %s", settings.DWH_API_ENDPOINT)
     url = f'{settings.DWH_API_ENDPOINT.rstrip("/")}/datasource/{source_id}/fhir-bundle'
+    ## basic file check
+    if not sourceFhirBundlePath or not os.path.isfile(sourceFhirBundlePath):
+        return f"Failed to locate file: '{sourceFhirBundlePath}'"
     files = {'fhir_bundle': open(sourceFhirBundlePath, 'rb')}
     headers = {'x-api-key': settings.dwh_api_key}
     response = requests.put(url, files=files, headers=headers)
@@ -100,10 +107,190 @@ def processSource(source_id: str) -> str:
     else:
         return f"Error: Something unexpected happedned: {response.status_code}: {response.content}"
 
+## CLI action processing
+def cliSummary(check:bool = False):
+    """ Render the summary/list of sources the DWH knows of.
+    If 'check' is True, don't render, just return True/False for connection """
+    logger.debug("Starting action...")
+    sourceIds = False
+    sourceIds = listDwhSources()
+    count = 0
+    while not sourceIds:
+        settings.dwh_api_key = askApiKey()
+        sourceIds = listDwhSources()
+        if count == 3:
+            logger.error("Too many failures, exiting")
+            print("Cannot connect to API. Please check the endpoing and key are entered correctly and that the server is running...")
+            sys.exit(1)
+    if check:
+        return True
+    print("List of your sources known to the DWH...")
+    # print(sourceIds)
+    print(PrettyTable(sourceIds))
+    print("You can use these source names to make further queries and updates")
+    print("")
+
+def cliStatus(datasourceName:str):
+    """ Provide the status and last update/ativity dates """
+    logger.debug("Starting action...")
+    sourceDetails = sourceStatus(datasourceName)
+
+    headers = []
+    values = []
+    for key in sourceDetails:
+        head = key
+        value = ""
+        if type(sourceDetails[key]) == type({}):
+            for key2 in sourceDetails[key]:
+                head += "/" + key2
+                value = sourceDetails[key][key2]
+                headers.append(head)
+                values.append(value)
+        else:
+            value = sourceDetails[key]
+            headers.append(head)
+            values.append(value)
+    myTable = PrettyTable(headers)
+
+    myTable.add_row(values)
+    print(myTable)
+    print("")
+def cliInfo(datasourceName:str):
+    """ Print info of last update of the datasource """
+    logger.debug("Starting action...")
+    sourceInfo = getSourceInfo(datasourceName)
+    print("Information logged by the server:")
+    print(sourceInfo)
+    print("")
+def cliError(datasourceName:str):
+    """ Print server logged errors for the datasource """
+    logger.debug("Starting action...")
+    sourceError = getSourceError(datasourceName)
+    print("Errors logged by the server:")
+    print(sourceError)
+    print("")
+
+def cliUpload(datasourceName:str, uploadFilepath:str):
+    """ Upload a file with fhir bundle data """
+    logger.debug("Starting action...")
+    print(f"Uploading source: '{datasourceName}'")
+    apiResponse = uploadSource(datasourceName, uploadFilepath)
+    print(f"Response from server: {apiResponse}")
+    time.sleep(2)
+    cliStatus(datasourceName)
+
+def cliProcess(datasourceName:str):
+    """ Process a file which has already been uploaded """
+    logger.debug("Starting action...")
+    if datasourceName not in listDwhSources():
+        logger.error("Remote source '%s' not recognised, aborting")
+        sys.exit(2)
+    print(f"About to process source: '{datasourceName}'")
+    print("This means the file upload will be added to the DWH database")
+    if areYouSure():
+        print(f"Processing source: '{datasourceName}'")
+        apiResponse = processSource(datasourceName)
+        logger.info("Source processed: '%s'", datasourceName)
+        print(f"Response from server: {apiResponse}")
+        time.sleep(2)
+        cliStatus(datasourceName)
+        print("You may need to wait for processing and check the status later.")
+        return True
+    print("Aborting processing, no action taken")
+    return False
+def cliDelete(datasourceName:str):
+    """ Delete source and show status after a few seconds """
+    logger.debug("Starting action...")
+    if datasourceName not in listDwhSources():
+        logger.error("Remote source '%s' not recognised, aborting")
+        sys.exit(2)
+    print(f"About to delete source: '{datasourceName}'")
+    if areYouSure():
+        print(f"Deleting source: '{datasourceName}'")
+        apiResponse = deleteSource(datasourceName)
+        logger.info("Source deleted: '%s'", datasourceName)
+        print(f"Response from server: {apiResponse}")
+        time.sleep(2)
+        cliStatus(datasourceName)
+        print("You may need to wait for processing and check the status later.")
+        return True
+    print("Aborting delete, no action taken")
+    return False
+
+def areYouSure():
+    """ Ask user to confirm action """
+    response = input("Please confirm [y/N]:")
+    if response.lower() == 'y' or response.lower() == 'yes':
+        return True
+    return False
+def askApiKey():
+    """ Ask user to supply API key interactively """
+    import getpass
+    while True:
+        apiKey = getpass.getpass("Enter API key:")
+        if len(apiKey) > 4:
+            break
+        logger.debug("API key should be quite a long string, please try again!")
+    return apiKey
+
 ## When called as script (not run if imported as module):
 if __name__ == "__main__":
-    ## Application logic starts here; processing steps abstracting complexity into functions
+    ## Application logic starts here; allow direct processing from CLI using functions unchanged from module use
+    import argparse
+    from prettytable import PrettyTable
+    import time
     logger.info("Starting api processing...")
-    logger.warning("NOT IMPLEMENTED")
+    logger.warning("WORK IN PROGRESS")
+    ## TODO: 
+    ## Argparse to determine what the user wants to do (and allow non-sensitive configuration)
+    ## Ask user for API endpoint and key if they are defaults
+    ## Call relevant function
+        ## Potentially print json response nicely
 
+    ## Setup argument processing
+    parser = argparse.ArgumentParser(prog=AppMeta.app_name, description=AppMeta.app_description)
+    parser.add_argument('--version', action='version', version=AppMeta.app_name)
+    parser.add_argument('-v', '--verbose', action='count', help='Increase verbosity (multiple allowed).')
+    ## Application specific parameters
+    action = parser.add_mutually_exclusive_group(required=True)
+    action.add_argument('-l', '-S', '--list', '--summary', action='store_true', help='Fetch summary list of sources from the DWH.')
+    action.add_argument('-s', '--status', action='store_true', help='Show status of uploaded datasource.')
+    action.add_argument('-i', '--info', action='store_true', help='Show info about the most recently uploaded datasource.')
+    action.add_argument('-e', '--error', action='store_true', help='Show error (if exists) about the most recently uploaded datasource.')
+    action.add_argument('-u', '--upload', action='store_true', help='Send a new/updated fhir-bundle for a datasource.')
+    action.add_argument('-p', '--process', action='store_true', help='Process an uploaded fhir-bundle file data into the DWH database.')
+    action.add_argument('-d', '--delete', action='store_true', help='Remove a datasource from the DWH.')
+
+    parser.add_argument('-n', '--ds-name', required=False, help='Name of datasource.')
+    parser.add_argument('-f', '--upload-file', required=False, help='Filename for the fhir-bundle.')
+    parser.add_argument('-a', '--dwh_api_endpoint', required=False, help='API endpoint for the DWH.')
+    args = parser.parse_args()
+
+    ## Map verbose count to log level
+    if args.verbose is not None:
+        verboseLevels = {1: 'WARNING', 2: 'INFO', 3: 'DEBUG'}
+        logger.debug("level set to (verbose = %s - %s): %s", args.verbose, verboseLevels.get(args.verbose, 'DEBUG'), logger.getEffectiveLevel())
+        logger.setLevel(verboseLevels.get(args.verbose, 'DEBUG'))
+        logger.debug("level set to: %s", logger.getEffectiveLevel())
+    logger.debug("args namespace: %s", args)
+
+    ## Check api and key
+    if settings.dwh_api_key == "ChangeMe" and settings.dwh_api_key == "":
+        settings.dwh_api_key = askApiKey()
+    if cliSummary(True):
+        logger.info("Connection to API checked")
+
+    ## Check args for action and complimenting name/file
+    if not any(vars(args).values()):
+        logger.warning("You must specify an action (try --help).")
+        parser.print_help()
+    actions = {'list': 'cliSummary', 'status': 'cliStatus', 'info': 'cliInfo', 'error': 'cliError', 'upload': 'cliUpload', 'process': 'cliProcess', 'delete': 'cliDelete'}
+    action = [x for x in actions.keys() if getattr(args, x)][0]
+    logger.debug("action: %s", action)
+    if action == 'list':
+        locals()[actions[action]]()
+    elif action in ['status', 'info', 'error', 'process', 'delete']:
+        locals()[actions[action]](args.ds_name)
+    else:
+        locals()[actions[action]](args.ds_name, args.upload_file)
     logger.info("Script run completed!")

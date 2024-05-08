@@ -8,6 +8,7 @@ Explainer: See which sources you have, trigger processing, delete them, update t
 """
 
 ## library imports
+import gzip
 import logging
 import os
 from pydantic_settings import BaseSettings
@@ -17,7 +18,7 @@ import PySide6
 from PySide6.QtCore import QFile
 from PySide6.QtUiTools import loadUiType, QUiLoader
 # from PySide6.QtUiTools import QUiLoader
-from PySide6.QtWidgets import QApplication, QWidget, QMainWindow, QFileDialog, QTableWidgetItem
+from PySide6.QtWidgets import QApplication, QWidget, QMainWindow, QFileDialog, QTableWidgetItem, QMessageBox
 import PySide6.QtGui
 import re
 import subprocess
@@ -28,7 +29,7 @@ class AppMeta():
     """ Purely constants """
     app_name: str = "DWH client"
     app_description: str = "A PySide6 (QT6) interactive GUI to upload fhir bundle to DWH server API"
-    app_version: str = "0.0.1-alpha-2"
+    app_version: str = "0.0.1-beta1"
 
 ## ---------------- ##
 ## Create  settings ##
@@ -120,7 +121,7 @@ class DwhClientWindow(QMainWindow, Ui_MainWindow):
     ## LOCAL processing
     def dsConfigFilePickerClicked(self):
         options = QFileDialog.Options()
-        fileName, _ = QFileDialog.getOpenFileName(self,"QFileDialog.getOpenFileName()", "","All Files (*)", options=options)
+        fileName, _ = QFileDialog.getOpenFileName(self,"Choose datasource configuration file", "","All Files (*)", options=options)
         if fileName:
             self.dsConfigFileText.setText(fileName)
     def dsConfigFileChanged(self):
@@ -131,7 +132,7 @@ class DwhClientWindow(QMainWindow, Ui_MainWindow):
             self.rawFhirFileText.setText(assumedRawFhirFn)
     def rawFhirFilePickerClicked(self):
         options = QFileDialog.Options()
-        fileName, _ = QFileDialog.getOpenFileName(self,"QFileDialog.getOpenFileName()", "","All Files (*)", options=options)
+        fileName, _ = QFileDialog.getOpenFileName(self,"Choose raw fhir xml file", "","All Files (*)", options=options)
         if fileName:
             self.rawFhirFileText.setText(fileName)
     def rawFhirFileChanged(self):
@@ -143,12 +144,13 @@ class DwhClientWindow(QMainWindow, Ui_MainWindow):
         self.generateFhirButton_hover()
     def dwhFhirFilePickerClicked(self):
         options = QFileDialog.Options()
-        fileName, _ = QFileDialog.getOpenFileName(self,"QFileDialog.getOpenFileName()", "","All Files (*)", options=options)
+        fileName, _ = QFileDialog.getOpenFileName(self,"Choose dwh fhir xml file", "","All Files (*)", options=options)
         if fileName:
             self.dwhFhirFileText.setText(fileName)
     def dwhFhirFileChanged(self):
-        """ Try to enable pseudonymize button """
+        """ Try to enable pseudonymize button and update the DWH tab's upload file """
         self.pseudonymizeButton_hover()
+        self.newDsFileEdit.setText(self.dwhFhirFileText.text())
     def secretKeyPasswordChanged(self):
         """ Try to enable pseudonymize button """
         self.pseudonymizeButton_hover()
@@ -156,14 +158,9 @@ class DwhClientWindow(QMainWindow, Ui_MainWindow):
         """ Verify and enable/disable click action """
         logger.info("Verifying and enabling/disabling generate fhir possibility")
         if self.verifyGeneratePreparedness():
-            # try: self.generateFhirButton.clicked.disconnect()
-            # except Exception: pass
-            # self.generateFhirButton.clicked.connect(self.generateFhir)
             self.generateFhirButton.setEnabled(True)
             self.generateFhirButton.setStyleSheet("font: bold; color: green")
         else:
-            # try: self.generateFhirButton.clicked.disconnect()
-            # except Exception: pass
             self.generateFhirButton.setEnabled(False)
             self.generateFhirButton.setStyleSheet("font: italic; color: gray")
     def verifyGeneratePreparedness(self) -> bool:
@@ -180,20 +177,7 @@ class DwhClientWindow(QMainWindow, Ui_MainWindow):
         """ Call the exisiting "script" style java code """
         logger.info("Generating fhir started...")
         ## Don't let user click it again while its running
-        # try: self.generateFhirButton.clicked.disconnect()
-        # except Exception: pass
         self.generateFhirButton.setEnabled(False)
-        ## NOTE: Can't update while running this (both synchronus methonds on the main window object)
-        # self.pseudonymizeButton.setStyleSheet("background-color: yellow; font: italic; color: black;")
-        # self.pseudonymizeButton.setText("Processing...")
-        # time.sleep(2)
-        # logger.info("Nearly there...")
-        # self.pseudonymizeButton.setStyleSheet("background-color: green; font: italic; color: black;")
-        # time.sleep(1)
-        # self.pseudonymizeButton.setStyleSheet("font: italic; color: gray;")
-        # self.pseudonymizeButton.setText("Generate Fhir bundle")
-        # libsDir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', 'resources', 'lib'))
-        # libsDir = os.path.abspath(os.path.join(projectRoot, 'resources', 'lib'))
         libsDir = os.path.abspath(os.path.join(projectRoot, 'resources', 'lib'))
         libs = [os.path.join(libsDir, file) for file in next(os.walk(libsDir), (None, None, []))[2] if file.endswith(".jar")] # [] if no file
         javaCpSep = ':'
@@ -217,15 +201,9 @@ class DwhClientWindow(QMainWindow, Ui_MainWindow):
         """ Verify and enable/disable click action """
         logger.info("Verifying and enabling/disabling pseudonymisation possibility")
         if self.verifyPseudonymisationPreparedness():
-            # try: self.pseudonymizeButton.clicked.disconnect()
-            # except Exception: pass
-            # self.pseudonymizeButton.clicked.connect(self.pseudonymizeFhir)
             self.pseudonymizeButton.setEnabled(True)
             self.pseudonymizeButton.setStyleSheet("font: bold; color: green")
         else:
-            # logger.warning("Disconnecting... %s", self.pseudonymizeButton.clicked.connect())
-            # try: self.pseudonymizeButton.clicked.disconnect()
-            # except Exception: pass
             self.pseudonymizeButton.setEnabled(False)
             self.pseudonymizeButton.setStyleSheet("font: italic; color: gray")
     def verifyPseudonymisationPreparedness(self) -> bool:
@@ -252,7 +230,7 @@ class DwhClientWindow(QMainWindow, Ui_MainWindow):
             with open(self.dwhFhirFileText.text(), 'w') as dwhFhir:
                 psyeudonymEnv = os.environ.copy()
                 psyeudonymEnv['secret_key'] = self.secretKeyPasswordEdit.text()
-                pseudonymizationScript = os.path.join(projectRoot, 'src', 'stream-pseudonymization.py')
+                pseudonymizationScript = os.path.join(projectRoot, 'src', 'stream_pseudonymization.py')
                 # proc = subprocess.run([pseudonymizationScript], input=rawFhir.read(), capture_output=True, text=True)
                 proc = subprocess.Popen(['python', pseudonymizationScript], stdin=rawFhir, stdout=subprocess.PIPE, env=psyeudonymEnv)
                 while True:
@@ -265,25 +243,42 @@ class DwhClientWindow(QMainWindow, Ui_MainWindow):
     ## DWH processing
     def dwhUploadFhirFilePickerClicked(self):
         options = QFileDialog.Options()
-        fileName, _ = QFileDialog.getOpenFileName(self,"QFileDialog.getOpenFileName()", "","All Files (*)", options=options)
+        fileName, _ = QFileDialog.getOpenFileName(self,"Choose dwh-ready fhir xml file", "","All Files (*)", options=options)
         if fileName:
             self.newDsFileEdit.setText(fileName)
     def uploadSource(self):
-        """ Upload bundle """
-        self.sourceInfoErrorBrowser.setText(api_processing.uploadSource(self.newDsNameEdit.text(), self.newDsFileEdit.text()))
+        """ User confirm, then upload bundle """
+        confirmation = QMessageBox(self)
+        confirmation.setWindowTitle("Confirm action")
+        confirmation.setStandardButtons(QMessageBox.Yes | QMessageBox.No)
+        confirmation.setText(f"Are you sure you want to upload new data for <b>'{self.newDsNameEdit.text()}'</b> from file:<br/><br/>{self.newDsFileEdit.text()}")
+        response = confirmation.exec()
+
+        if response == QMessageBox.Yes:
+            logger.info("Uploading new data for '%s'", self.newDsNameEdit.text())
+            ## If file big enough, compress before upload
+            realUploadFilePath = self.newDsFileEdit.text()
+            # if os.path.getsize(self.newDsFileEdit.text()) > 1000000:
+            if os.path.getsize(self.newDsFileEdit.text()) > 100:
+                logger.info("Compressing before upload...")
+                zippedBundleName = "fhir-bundle.xml"
+                if os.path.basename(self.newDsFileEdit.text()) != zippedBundleName:
+                    os.rename(self.newDsFileEdit.text(), os.path.join(os.path.dirname(self.newDsFileEdit.text()), zippedBundleName))
+                with open(os.path.join(os.path.dirname(self.newDsFileEdit.text()), zippedBundleName), 'rb') as f_in:
+                    with gzip.open(realUploadFilePath, 'wb') as f_out:
+                        ## Write the gzipped file
+                        f_out.writelines(f_in)
+            self.sourceInfoErrorBrowser.setText(api_processing.uploadSource(self.newDsNameEdit.text(), realUploadFilePath))
+            if os.path.basename(self.newDsFileEdit.text()) != zippedBundleName:
+                os.rename(os.path.join(os.path.dirname(self.newDsFileEdit.text()), zippedBundleName), self.newDsFileEdit.text())
 
     def uploadButton_hover(self):
         """ Verify and enable/disable click action """
         logger.info("Verifying and enabling/disabling upload possibility")
         if self.verifyUploadPreparedness():
-            # try: self.newDsUploadPushButton.clicked.disconnect()
-            # except Exception: pass
-            # self.newDsUploadPushButton.clicked.connect(self.uploadSource)
-            self.newDsUploadPushButton.setEnabled(False)
+            self.newDsUploadPushButton.setEnabled(True)
             self.newDsUploadPushButton.setStyleSheet("font: bold; color: green")
         else:
-            # try: self.newDsUploadPushButton.clicked.disconnect()
-            # except Exception: pass
             self.newDsUploadPushButton.setEnabled(False)
             self.newDsUploadPushButton.setStyleSheet("font: italic; color: gray")
     def verifyUploadPreparedness(self) -> bool:
@@ -334,11 +329,25 @@ class DwhClientWindow(QMainWindow, Ui_MainWindow):
         self.dsStatusTableWidget.setItem(0, 3, QTableWidgetItem(dict.get(dsStatus, 'last_activity', 'Unavailable')))
         self.dsStatusTableWidget.setItem(0, 4, QTableWidgetItem(dict.get(dsStatus, 'last_update', 'Unavailable')))
     def deleteDs(self):
-        """ Simply call delete endpoint and show response """
-        self.sourceInfoErrorBrowser.setText(api_processing.deleteSource(self.selectedSourceId))
+        """ User confirm, then call delete endpoint and show response """
+        confirmation = QMessageBox(self)
+        confirmation.setWindowTitle("Confirm action")
+        confirmation.setStandardButtons(QMessageBox.Yes | QMessageBox.No)
+        confirmation.setText(f"Are you sure you want to delete data for <b>'{self.selectedSourceId}'</b>?<br/><br/>This will remove the data from the database and any files on the server with data.")
+        response = confirmation.exec()
+
+        if response == QMessageBox.Yes:
+            self.sourceInfoErrorBrowser.setText(api_processing.deleteSource(self.selectedSourceId))
     def processDs(self):
-        """ Simply call process endpoint and show response """
-        self.sourceInfoErrorBrowser.setText(api_processing.processSource(self.selectedSourceId))
+        """ User confirm, then call process endpoint and show response """
+        confirmation = QMessageBox(self)
+        confirmation.setWindowTitle("Confirm action")
+        confirmation.setStandardButtons(QMessageBox.Yes | QMessageBox.No)
+        confirmation.setText(f"Are you sure you want to process data for <b>'{self.selectedSourceId}'</b>?<br/><br/>This will process the fhir-bundle into the DWH database so it can be queried with the query tool.")
+        response = confirmation.exec()
+
+        if response == QMessageBox.Yes:
+            self.sourceInfoErrorBrowser.setText(api_processing.processSource(self.selectedSourceId))
     def showDsInfo(self):
         """ Simply call info endpoint and show response """
         self.sourceInfoErrorBrowser.setText(api_processing.getSourceInfo(self.selectedSourceId))

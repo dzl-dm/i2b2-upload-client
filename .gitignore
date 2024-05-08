@@ -8,3 +8,8 @@ configuration/
 log/
 tmp/
 __pycache__
+/build/
+/dist/
+README.html
+src/gui/ui-gen/
+.venv/

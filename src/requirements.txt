@@ -1,5 +1,6 @@
 fhir.resources
 fhir.resources[xml]
 lxml
+PrettyTable
 pydantic-settings
 requests
