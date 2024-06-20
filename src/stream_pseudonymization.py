@@ -155,29 +155,6 @@ class FhirStream(xml.sax.ContentHandler):
         for nameElem in self.currentSubElement.etree.xpath("//resource/Patient/name"):
             self.currentSubElement.etree.xpath("//resource/Patient")[0].remove(nameElem)
 
-    def _isCurrentDuplicate(self) -> bool:
-        """ Check if element is a duplicate """
-        if self.currentEntryResourceType == 'Observation':
-            conceptCode = self.currentSubElement.etree.xpath("//resource/Observation/code/coding/code/@value")[0]
-            conceptDate = self.currentSubElement.etree.xpath("//resource/Observation/effectiveDateTime/@value")[0]
-            #logger.debug('current conceptCode: %s', conceptCode)
-            #logger.debug('current conceptDate: %s', conceptDate)
-            ## Evaluate if we already have this concept?
-            if conceptCode in self.concepts and conceptDate in self.concepts[conceptCode]:
-                ## Duplicate
-                observationId = self.currentSubElement.etree.xpath("//resource/Observation/id/@value")[0]
-                logger.info("Duplicate observation found, fhir-id: '%s'", observationId)
-                return True
-            else:
-                ## Add to map
-                if conceptCode in self.concepts:
-                    self.concepts[conceptCode].append(conceptDate)
-                else:
-                    self.concepts[conceptCode] = [conceptDate]
-                return False
-        else:
-            return False
-
     def _validAttrib(self, xpathAttrib) -> str:
         if len(xpathAttrib) == 1:
             return xpathAttrib[0]
@@ -187,7 +164,7 @@ class FhirStream(xml.sax.ContentHandler):
         else:
             return ""
 
-def _hash_ids(given_name:str, surname:str, birthdate:str, salt:str = settings.secret_key) -> str:
+def _hash_ids(given_name:str, surname:str, birthdate:str, salt:str = settings.secret_key, sep:str = "|") -> str:
     """ Hash the combination of:
         * salt
         * given-name
@@ -197,7 +174,7 @@ def _hash_ids(given_name:str, surname:str, birthdate:str, salt:str = settings.se
     """
     #logger.debug("Creating user pseudonym...")
     return hashlib.sha3_256(
-        "{salt}|{given_name}|{surname}|{birthdate}".format(
+        "{salt}{sep}{given_name}{sep}{surname}{sep}{birthdate}".format(
             salt=salt.encode('UTF-8'),
             given_name=given_name,
             surname=surname,
