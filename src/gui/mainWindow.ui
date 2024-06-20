@@ -62,17 +62,17 @@
      <attribute name="title">
       <string>Local processing</string>
      </attribute>
-     <widget class="QLabel" name="userInfoLabel">
+     <widget class="QLabel" name="stage1InfoLabel">
       <property name="geometry">
        <rect>
         <x>10</x>
         <y>10</y>
-        <width>301</width>
+        <width>771</width>
         <height>71</height>
        </rect>
       </property>
       <property name="text">
-       <string>Please choose an XML fhir bundle to pseudonymize</string>
+       <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;Stage 1:&lt;/span&gt; Choose an XML datasource to source and map data, adjust &amp;quot;RAW fhir bundle&amp;quot; for output location.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
       </property>
       <property name="wordWrap">
        <bool>true</bool>
@@ -82,9 +82,9 @@
       <property name="geometry">
        <rect>
         <x>10</x>
-        <y>130</y>
+        <y>120</y>
         <width>771</width>
-        <height>36</height>
+        <height>41</height>
        </rect>
       </property>
       <layout class="QGridLayout" name="gridLayout">
@@ -112,30 +112,20 @@
         <widget class="QLineEdit" name="rawFhirFileText"/>
        </item>
       </layout>
+      <zorder>rawFhirFileText</zorder>
+      <zorder>rawFhirInputLabel</zorder>
+      <zorder>rawFhirFileInputPushButton</zorder>
      </widget>
      <widget class="QWidget" name="layoutWidget">
       <property name="geometry">
        <rect>
         <x>10</x>
-        <y>230</y>
-        <width>511</width>
-        <height>34</height>
+        <y>340</y>
+        <width>771</width>
+        <height>41</height>
        </rect>
       </property>
       <layout class="QGridLayout" name="gridLayout_3">
-       <item row="0" column="0">
-        <widget class="QLabel" name="secretKeyLabel">
-         <property name="toolTip">
-          <string>setting: secret_key</string>
-         </property>
-         <property name="text">
-          <string>Pseudonymization key:</string>
-         </property>
-         <property name="alignment">
-          <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-         </property>
-        </widget>
-       </item>
        <item row="0" column="1">
         <widget class="QLineEdit" name="secretKeyPasswordEdit">
          <property name="toolTip">
@@ -152,13 +142,48 @@
          </property>
         </widget>
        </item>
+       <item row="0" column="0">
+        <widget class="QLabel" name="secretKeyLabel">
+         <property name="toolTip">
+          <string>This lets you (and only you) re-identify a patient</string>
+         </property>
+         <property name="text">
+          <string>Pseudonymization key:</string>
+         </property>
+         <property name="alignment">
+          <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+         </property>
+        </widget>
+       </item>
+       <item row="0" column="2">
+        <widget class="QPushButton" name="pseudonymizeButton">
+         <property name="enabled">
+          <bool>false</bool>
+         </property>
+         <property name="toolTip">
+          <string>You must specify RAW and DWH files as well as a pseudonymization key</string>
+         </property>
+         <property name="autoFillBackground">
+          <bool>false</bool>
+         </property>
+         <property name="styleSheet">
+          <string notr="true">font: italic; color: gray</string>
+         </property>
+         <property name="text">
+          <string>Pseudonymize</string>
+         </property>
+        </widget>
+       </item>
       </layout>
+      <zorder>secretKeyPasswordEdit</zorder>
+      <zorder>secretKeyLabel</zorder>
+      <zorder>pseudonymizeButton</zorder>
      </widget>
      <widget class="QWidget" name="layoutWidget">
       <property name="geometry">
        <rect>
         <x>10</x>
-        <y>180</y>
+        <y>290</y>
         <width>771</width>
         <height>36</height>
        </rect>
@@ -188,49 +213,20 @@
         <widget class="QLineEdit" name="dwhFhirFileText"/>
        </item>
       </layout>
-     </widget>
-     <widget class="QPushButton" name="pseudonymizeButton">
-      <property name="enabled">
-       <bool>false</bool>
-      </property>
-      <property name="geometry">
-       <rect>
-        <x>590</x>
-        <y>430</y>
-        <width>201</width>
-        <height>34</height>
-       </rect>
-      </property>
-      <property name="toolTip">
-       <string>You must specify RAW and DWH files as well as a pseudonymization key</string>
-      </property>
-      <property name="autoFillBackground">
-       <bool>false</bool>
-      </property>
-      <property name="styleSheet">
-       <string notr="true">font: italic; color: gray</string>
-      </property>
-      <property name="text">
-       <string>Pseudonymize</string>
-      </property>
+      <zorder>dwhFhirFileOutputPushButton</zorder>
+      <zorder>dwhFhirFileText</zorder>
+      <zorder>dwhFhirOutputLabel</zorder>
      </widget>
      <widget class="QWidget" name="layoutWidget_2">
       <property name="geometry">
        <rect>
         <x>10</x>
-        <y>80</y>
+        <y>70</y>
         <width>771</width>
-        <height>36</height>
+        <height>41</height>
        </rect>
       </property>
       <layout class="QGridLayout" name="gridLayout_4">
-       <item row="0" column="2">
-        <widget class="QPushButton" name="dsConfigFileInputPushButton">
-         <property name="text">
-          <string>Choose file...</string>
-         </property>
-        </widget>
-       </item>
        <item row="0" column="0">
         <widget class="QLabel" name="dsConfigLabel">
          <property name="text">
@@ -248,7 +244,17 @@
          </property>
         </widget>
        </item>
+       <item row="0" column="2">
+        <widget class="QPushButton" name="dsConfigFileInputPushButton">
+         <property name="text">
+          <string>Choose file...</string>
+         </property>
+        </widget>
+       </item>
       </layout>
+      <zorder>dsConfigFileInputPushButton</zorder>
+      <zorder>dsConfigFileText</zorder>
+      <zorder>dsConfigLabel</zorder>
      </widget>
      <widget class="QPushButton" name="generateFhirButton">
       <property name="enabled">
@@ -256,8 +262,8 @@
       </property>
       <property name="geometry">
        <rect>
-        <x>370</x>
-        <y>430</y>
+        <x>10</x>
+        <y>170</y>
         <width>201</width>
         <height>34</height>
        </rect>
@@ -273,6 +279,22 @@
       </property>
       <property name="text">
        <string>Generate Fhir bundle</string>
+      </property>
+     </widget>
+     <widget class="QLabel" name="stage1InfoLabel_2">
+      <property name="geometry">
+       <rect>
+        <x>10</x>
+        <y>220</y>
+        <width>521</width>
+        <height>71</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;Stage 2:&lt;/span&gt; Choose or adjust the &amp;quot;RAW fhir bundle&amp;quot; to pseudonymize and adjust the &amp;quot;DWH fhir bundle&amp;quot; as output and use your private pseudonymisation key - generate like a password first time, then always use the same key/password.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+      </property>
+      <property name="wordWrap">
+       <bool>true</bool>
       </property>
      </widget>
     </widget>
@@ -670,15 +692,24 @@
        <rect>
         <x>20</x>
         <y>270</y>
-        <width>121</width>
-        <height>31</height>
+        <width>91</width>
+        <height>22</height>
        </rect>
+      </property>
+      <property name="sizePolicy">
+       <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+        <horstretch>0</horstretch>
+        <verstretch>0</verstretch>
+       </sizepolicy>
       </property>
       <property name="toolTip">
        <string>Check status after uploading or processing a source</string>
       </property>
       <property name="text">
        <string>Reload status</string>
+      </property>
+      <property name="flat">
+       <bool>false</bool>
       </property>
      </widget>
     </widget>

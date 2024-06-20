@@ -1,4 +1,4 @@
-## The GUI also needs the requitements from ../requirements.txt
+## The GUI also needs the requirements from normal src/requirements.txt
 PySide6
 PySide6_Addons
 PySide6_Essentials

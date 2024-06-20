@@ -20,7 +20,7 @@ if ! pip install -r src/requirements.txt > /dev/null 2>&1 ; then
     python -m venv ./.venv
     ./.venv/bin/pip install -r src/requirements.txt
 fi
-pip install -r src/gui/requirements.txt
+[[ -d "${client_basedir}/.venv" ]] && ./.venv/bin/pip install -r src/gui/requirements.txt || pip install -r src/gui/requirements.txt
 
 log "DWH Upload Client installation complete"
 log "You can now launch the GUI client under:\n ${client_basedir}/launch.sh"

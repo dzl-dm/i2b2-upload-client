@@ -5,7 +5,7 @@ This application uses 3 components to upload patient data to a Data Warehouse. T
 1. Upload to the DWH and manage the status of the data
 
 ## Stage 1: FHIR conversion
-We use a helper file, usually call this the `datasource.xml`. Its a custom xml definition of how the csv patient data is formatted after your custom transformation (which files, which columns map to which parameters, etc). A java program uses the XML configuration to convert the data.
+We use a helper file, usually call this the `datasource.xml`. Its a custom xml definition of how the csv patient data is formatted after any custom transformation you have done (which files, which columns map to which parameters, etc). A java program uses the XML configuration to convert the data into a fhir bundle in XML.
 
 ## Stage 2: Pseudonymization
 Data protection is very important, so this stage removes the name information and creates a non-reversible (but still deterministic) ID as the pseudonym for the patient. You must provide a secret key (a long, random string you generate yourself and keep secret) so that only you generate the pseudonym for the patients. If someone else were to run this stage with their secret key, it would not produce compatible pseudonyms. Record linkage can be achieved by sharing the secret key. This makes sense in environments where multiple people manage different parts of the same data set.
@@ -14,7 +14,7 @@ Data protection is very important, so this stage removes the name information an
 You can add, update and delete the data in this stage. You must provide your API key (will be provided to you when you are invited to use the upload system). You can also view the status of each source that you have already added to the DWH. Important to note, is that the upload and processing parts of "adding" a data source are separate. You must manually tell the DWH to process the uploaded data once the upload is complete.
 
 # The GUI client
-I have developed a Graphical User Interface (GUI) which uses the same background code as the [command line client](#the-cli-client). It "simply" adds an visual interface to make the process more intuitive and less error prone.
+I have developed a Graphical User Interface (GUI) which uses the same background code as the [command line client](#the-cli-client). It "simply" adds a visual interface to make the process more intuitive and less error prone.
 
 ## Using the GUI client
 The GUI is designed to be intuitive so does not need much explanation here. You should recognise the main 3 stages from above and be able to associate the relevant fields and actions. Some fields are auto-filled with suggested file paths, you can still choose to change them.
@@ -24,6 +24,18 @@ There are 3 versions of this client, each provides the same interface but are im
 
 ### The windows .exe
 If you can run this, then its probably the easiest option. The code is compiled into a standard windows `.exe` which you can double-click to run. The majority of the code runs directly from this `.exe`, however 1 part is still called separately and requires `java` (version 8 or 11) to be available. This is like the old client and is what implements stage 1.
+
+#### Autofill for windows
+Its possible to define variables in a file so you don't have to fill them in each time you use the application, here I show you how. Create a file (any name and location you like, but with the extension `.bat`). eg. `launch-dwh-client.bat` with content:
+```
+set secret_key=ChangeMe
+set dwh_api_key=ChangeMe
+call drive:\path\to\dwh_client.exe
+```
+Then this can be executed or called from the cmd console with:
+```
+call launch-dwh-client.bat
+```
 
 ### The linux binary
 The python source code is compiled into a linux binary which you can run like any other application. The majority of the code runs directly from this binary, however 1 part is still called separately and requires `java` (version 8 or 11) to be available. This is like the old client and is what implements stage 1.

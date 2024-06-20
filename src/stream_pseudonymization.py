@@ -146,9 +146,9 @@ class FhirStream(xml.sax.ContentHandler):
         """ Hash (with salt) the PID and remove other name information """
         ## Reference elements with xpath
         self.currentSubElement.etree.xpath("//resource/Patient/identifier/value")[0].attrib['value'] = _hash_ids(
-            self.currentSubElement.etree.xpath("//resource/Patient/name/given")[0].attrib['value'],
-            self.currentSubElement.etree.xpath("//resource/Patient/name/family")[0].attrib['value'],
-            self.currentSubElement.etree.xpath("//resource/Patient/birthDate")[0].attrib['value'],
+            self._validAttrib(self.currentSubElement.etree.xpath("//resource/Patient/name/given/@value")),
+            self._validAttrib(self.currentSubElement.etree.xpath("//resource/Patient/name/family/@value")),
+            self._validAttrib(self.currentSubElement.etree.xpath("//resource/Patient/birthDate/@value")),
         )
         if len(self.currentSubElement.etree.xpath("//resource/Patient/name")) > 1:
             logger.warning("Patient '%s' has more than 1 'name' entry, removing all, 1st occurance used for pseudonymization", self.currentPatient)
@@ -177,6 +177,15 @@ class FhirStream(xml.sax.ContentHandler):
                 return False
         else:
             return False
+
+    def _validAttrib(self, xpathAttrib) -> str:
+        if len(xpathAttrib) == 1:
+            return xpathAttrib[0]
+        elif len(xpathAttrib) > 1:
+            logger.warning("There are multiple matching attributes (returning 1st)! '%s'", xpathAttrib)
+            return xpathAttrib[0]
+        else:
+            return ""
 
 def _hash_ids(given_name:str, surname:str, birthdate:str, salt:str = settings.secret_key) -> str:
     """ Hash the combination of:

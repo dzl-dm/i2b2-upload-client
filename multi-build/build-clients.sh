@@ -22,7 +22,8 @@ function build_cli_client_package {
     cp -a cli-client-scripts/* tmp/cli-client/
     cp -a ../resources/lib tmp/cli-client/
     ## Convert the markdown ReadMe to more universal HTML
-    pandoc -f markdown ../README.md > tmp/cli-client/README.html
+    # pandoc -f markdown ../README.md > tmp/cli-client/README.html
+    cp ${client_basedir}/dist/README.html tmp/cli-client/README.html
 
     ## Build the archive
     cd tmp
@@ -47,7 +48,8 @@ function build_src_gui_client_package {
     pyside6-uic ../src/gui/mainWindow.ui -o tmp/gui-client/src/gui/ui_mainwindow.py
 
     ## Convert the markdown ReadMe to more universal HTML
-    pandoc -f markdown ../README.md > tmp/gui-client/README.html
+    # pandoc -f markdown ../README.md > tmp/gui-client/README.html
+    cp ${client_basedir}/dist/README.html tmp/gui-client/README.html
 
     ## Build the archive
     cd tmp
@@ -90,15 +92,16 @@ function build_linux_gui_client_package {
 ## Check for the build venv... (we need it to build the GUI)
 type deactivate 2>/dev/null || { [[ -d "${client_basedir}/.venv" ]] && . ${client_basedir}/.venv/bin/activate && log "Using python venv..."; } || log "I don't see a venv, check that is correct?"
 
+## Convert the markdown ReadMe to more universal HTML
+log "Compiling documentation..."
+pandoc -f markdown ../README.md > ${client_basedir}/dist/README.html
+
 ## Build each client, then cleanup...
 log "Building clients..."
 build_cli_client_package
 build_src_gui_client_package
-# build_exe_gui_client_package
-# build_linux_gui_client_package
-
-## Convert the markdown ReadMe to more universal HTML
-pandoc -f markdown ../README.md > ${client_basedir}/dist/README.html
+build_exe_gui_client_package
+build_linux_gui_client_package
 
 ## Remove copied/build files
 log "Cleaning up temp/build..."

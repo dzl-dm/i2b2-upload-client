@@ -8,6 +8,7 @@ Explainer: See which sources you have, trigger processing, delete them, update t
 """
 
 ## library imports
+import datetime
 import gzip
 import logging
 import os
@@ -167,10 +168,14 @@ class DwhClientWindow(QMainWindow, Ui_MainWindow):
         """ Check we have in/out files """
         logger.info("Checking... %s, %s", self.dsConfigFileText.text(), self.rawFhirFileText.text())
         if not os.path.exists(self.dsConfigFileText.text()):
-            logger.warning("Config input test failed")
+            logger.warning("Config input test failed (%s)", self.dsConfigFileText.text())
             return False
         if not os.path.isdir(os.path.dirname(self.rawFhirFileText.text())):
-            logger.warning("Fhir output test failed")
+            if os.path.isdir(os.path.dirname(os.path.dirname(self.rawFhirFileText.text()))):
+                ## If parent of output dir exists, simply add the last directory level (eg <project>/client-output/)
+                os.mkdir(os.path.dirname(self.rawFhirFileText.text()))
+                return True
+            logger.warning("Fhir output test failed (%s)", os.path.dirname(self.rawFhirFileText.text()))
             return False
         return True
     def generateFhir(self):
@@ -256,21 +261,30 @@ class DwhClientWindow(QMainWindow, Ui_MainWindow):
 
         if response == QMessageBox.Yes:
             logger.info("Uploading new data for '%s'", self.newDsNameEdit.text())
+            self.informUserApi(f"[{nowTimeStamp()}] Starting upload", clearInfo=True)
             ## If file big enough, compress before upload
             realUploadFilePath = self.newDsFileEdit.text()
-            # if os.path.getsize(self.newDsFileEdit.text()) > 1000000:
-            if os.path.getsize(self.newDsFileEdit.text()) > 100:
+            if os.path.getsize(self.newDsFileEdit.text()) > 1000000:
+            # if os.path.getsize(self.newDsFileEdit.text()) > 100:
                 logger.info("Compressing before upload...")
-                zippedBundleName = "fhir-bundle.xml"
-                if os.path.basename(self.newDsFileEdit.text()) != zippedBundleName:
-                    os.rename(self.newDsFileEdit.text(), os.path.join(os.path.dirname(self.newDsFileEdit.text()), zippedBundleName))
-                with open(os.path.join(os.path.dirname(self.newDsFileEdit.text()), zippedBundleName), 'rb') as f_in:
+                self.informUserApi(f"[{nowTimeStamp()}] Compressing before upload...")
+                ## TODO: The uplaod is currently hard-coded to always be saved with this name, even if compressed
+                serverBundleName = "fhir-bundle.xml"
+                realUploadFilePath = os.path.join(os.path.dirname(self.newDsFileEdit.text()), "upload.gz")
+                if os.path.basename(self.newDsFileEdit.text()) != serverBundleName:
+                    os.rename(self.newDsFileEdit.text(), os.path.join(os.path.dirname(self.newDsFileEdit.text()), serverBundleName))
+                with open(os.path.join(os.path.dirname(self.newDsFileEdit.text()), serverBundleName), 'rb') as f_in:
                     with gzip.open(realUploadFilePath, 'wb') as f_out:
                         ## Write the gzipped file
                         f_out.writelines(f_in)
-            self.sourceInfoErrorBrowser.setText(api_processing.uploadSource(self.newDsNameEdit.text(), realUploadFilePath))
-            if os.path.basename(self.newDsFileEdit.text()) != zippedBundleName:
-                os.rename(os.path.join(os.path.dirname(self.newDsFileEdit.text()), zippedBundleName), self.newDsFileEdit.text())
+                if os.path.basename(self.newDsFileEdit.text()) != serverBundleName:
+                    os.rename(os.path.join(os.path.dirname(self.newDsFileEdit.text()), serverBundleName), self.newDsFileEdit.text())
+            self.informUserApi(f"[{nowTimeStamp()}] Uploading...")
+            self.sourceInfoErrorBrowser.append(f"<b>API response:</b> {api_processing.uploadSource(self.newDsNameEdit.text(), realUploadFilePath)}")
+            if realUploadFilePath != self.newDsFileEdit.text():
+                os.remove(realUploadFilePath)
+            self.informUserApi(f"[{nowTimeStamp()}] Upload complete, check status.")
+            self.showCurrentSourceStatus()
 
     def uploadButton_hover(self):
         """ Verify and enable/disable click action """
@@ -300,6 +314,7 @@ class DwhClientWindow(QMainWindow, Ui_MainWindow):
         ## Connect - well, update settings to allow connection
         api_processing.settings.DWH_API_ENDPOINT = self.apiUrlEdit.text()
         api_processing.settings.dwh_api_key = self.apiKeyPasswordEdit.text()
+        self.informUserApi(f"[{nowTimeStamp()}] Connecting to server and updating source list...", clearInfo=True)
         ## Update sources list
         sources = api_processing.listDwhSources()
         if sources is not None:
@@ -308,12 +323,16 @@ class DwhClientWindow(QMainWindow, Ui_MainWindow):
             self.dsChooseComboBox.addItems(sources)
             self.apiConnectPushButton.setText("Connected/refresh list")
             self.apiConnectPushButton.setStyleSheet("background-color: green; font: bold; color: black;")
+            self.reloadStatusPushButton.setStyleSheet("background-color: green; font: bold; color: black;")
+            self.informUserApi(f"[{nowTimeStamp()}] Connected, please select a source to work with from the dropdown or upload a new source")
         else:
             logger.warning("Could not connect to api (%s)", api_processing.settings.DWH_API_ENDPOINT)
+            self.informUserApi(f"[{nowTimeStamp()}] Could not connect to api ({api_processing.settings.DWH_API_ENDPOINT})")
 
     def dsSelected(self, source_id: str):
         """ Update selected DS """
         logger.info("Updating source: %s", source_id)
+        self.sourceInfoErrorBrowser.clear()
         if not source_id:
             self.selectedSourceId = None
         else:
@@ -337,7 +356,11 @@ class DwhClientWindow(QMainWindow, Ui_MainWindow):
         response = confirmation.exec()
 
         if response == QMessageBox.Yes:
+            self.informUserApi(f"[{nowTimeStamp()}] Connecting to server and deleting source...", clearInfo=True)
             self.sourceInfoErrorBrowser.setText(api_processing.deleteSource(self.selectedSourceId))
+            time.sleep(0.2)
+            self.showCurrentSourceStatus()
+
     def processDs(self):
         """ User confirm, then call process endpoint and show response """
         confirmation = QMessageBox(self)
@@ -347,14 +370,32 @@ class DwhClientWindow(QMainWindow, Ui_MainWindow):
         response = confirmation.exec()
 
         if response == QMessageBox.Yes:
+            self.informUserApi(f"[{nowTimeStamp()}] Connecting to server and processing source...", clearInfo=True)
             self.sourceInfoErrorBrowser.setText(api_processing.processSource(self.selectedSourceId))
+            self.informUserApi(f"[{nowTimeStamp()}] Processing can take some time, reload the status to view progress...")
+            time.sleep(0.2)
+            self.showCurrentSourceStatus()
     def showDsInfo(self):
         """ Simply call info endpoint and show response """
         self.sourceInfoErrorBrowser.setText(api_processing.getSourceInfo(self.selectedSourceId))
+        self.showCurrentSourceStatus()
     def showDsError(self):
         """ Simply call error endpoint and show response """
         self.sourceInfoErrorBrowser.setText(api_processing.getSourceError(self.selectedSourceId))
+        self.showCurrentSourceStatus()
 
+    def informUserApi(self, infoText:str, clearInfo:bool = False):
+        """ Display some text to user about what the client is doing """
+        if clearInfo:
+            self.sourceInfoErrorBrowser.setText(infoText)
+        else:
+            self.sourceInfoErrorBrowser.append(infoText)
+
+def nowTimeStamp() -> str:
+    """ Simply return the formatted current datetime 
+    TODO: Better would be to leverage the logging module even for user feedback """
+    return datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    # return f"{datetime.datetime.now():%Y-%m-%d %H:%M:%S}"
 
 if __name__ == '__main__':
     # You need one (and only one) QApplication instance per application.
