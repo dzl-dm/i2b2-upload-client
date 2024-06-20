@@ -128,3 +128,90 @@ pyinstaller dwh_client.spec
 ## Build .spec file with (eg. first run):
 pyinstaller --onefile --add-data="resources:resources" --add-data="src:src" --add-data="src/gui/ui_mainwindow.py:src/gui/" --hidden-import=requests src/gui/dwh_client.py
 ```
+
+
+
+# Manual CLI mode (eg for automation)
+You should be able to follow the (Client setup)[#Client-setup] part once, then be able to run the stages directly any time.
+
+## Client setup
+We need to set the following 2 keys for the client to use when you open a new cmd/shell to use the client.
+```
+## Windows:
+set secret_key=""
+set dwh_api_key=""
+## Linux
+export secret_key=""
+export dwh_api_key=""
+```
+> You will be provided with the `dwh_api_key` when you are granted access to upload data to the DWH.
+> You should generate the `secret_key` as a long random string (like a password). Use the same one for all datasets unless you want to remove the possibility of record linkage between datasets. Share the key only when soemone else is also managing complimentary data for the same patients (eg observational data and bionbank data)
+
+We also need to install python libraries:
+```
+pip install -r /path/to/cli-client/src/requirements.txt
+```
+> Using venv or similar tools is beyond the scope of this readme
+
+## Per-dataset preparation
+For each dataset you want to upload, you need the data (already transformed into csv files) and a `datasource.xml` configuration file, which maps the csv data to standard, internationally recognised concept codes. This is the same as with the previous client, however, we need to add an extra XML tag in the `datasource.xml`.
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<datasource version="1.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+	<meta>
+		<id>...</id>
+		<etl-strategy>...</etl-strategy>
+		<version-date>...</version-date>
+		<timezone>Europe/Berlin</timezone> <!-- ADD THIS LINE -->
+	</meta>
+...
+</datasource>
+```
+
+The processing stages will use intermediate files which can safely be deleted after the upload. You can choose what to call them:
+* Stage 1 output: A FHIR bundle of the whole dataset in XML format (eg `fhir_raw.xml`)
+* Stage 2 output: Pseudonymize the existing patient identifying data in the fhir_raw.xml (eg `fhir_dwh.xml`)
+
+## Stage 1:
+You must use java version 8 (1.8) or 11. Check with `java -version`. You can have multiple versions installed, you may need to research how to run a specific version on your system (and potentially replace the initial `java` command below with the specific, desired java version).
+```sh
+## Linux
+java -Dfile.encoding="UTF-8" -cp /path/to/cli-client/lib/\* de.sekmi.histream.etl.ExportFHIR ./datasource.xml > client-output/fhir_raw.xml
+```
+
+## Stage 2:
+```sh
+## Windows
+type client-output/fhir_raw.xml | /path/to/cli-client/src/stream_pseudonymization.py > client-output/fhir_dwh.xml
+## Linux
+cat client-output/fhir_raw.xml | /path/to/cli-client/src/stream_pseudonymization.py > client-output/fhir_dwh.xml
+```
+
+## Stage 3:
+Stage 3 encompases all the interactions with the DWH API. There are multiple things you can do, 2 at minimum are vital to upload data.
+### Part a:
+```sh
+/path/to/cli-client/src/api_processing.py -u -n "My Source Name" -f ./client-output/fhir_dwh.xml
+```
+
+### Part b:
+```sh
+/path/to/cli-client/src/api_processing.py -p -n "My Source Name"
+```
+> At this point, if there weren't any errors, the data is uploaded and available in the Data Warehouse. You can use some of the following guidance to view more information and delete the data from the Data Warehouse.
+
+## View and manage data sources
+Information on how to get more from the Data Warehouse's API. List all sources, view status and details about each source, delete sources.
+```sh
+## View the help page of the client 
+/path/to/cli-client/src/api_processing.py --help
+## View a summary list of all sources in the DWH
+/path/to/cli-client/src/api_processing.py -S
+## View status of a single source in the DWH
+/path/to/cli-client/src/api_processing.py -s -n "My Source Name"
+## View info or error of a single source in the DWH
+/path/to/cli-client/src/api_processing.py -i -n "My Source Name"
+/path/to/cli-client/src/api_processing.py -e -n "My Source Name"
+## Delete a single source in the DWH
+/path/to/cli-client/src/api_processing.py -d -n "My Source Name"
+```
