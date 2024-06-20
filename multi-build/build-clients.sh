@@ -2,9 +2,12 @@
 
 df="%Y-%m-%d %H:%M:%S"
 script_name="$(basename ${BASH_SOURCE[0]})"
-client_basedir="$(dirname ${script_name})/.."
 function log { >&2 echo "[$(date +"$df")] {${script_name}} DEBUG: ${@}"; }
+# client_basedir="$(dirname ${script_name})/.."
+client_basedir="$(cd $(dirname ${BASH_SOURCE[0]})/.. && pwd)"
 log "Client basedir: ${client_basedir}"
+cd "${client_basedir}/multi-build"
+log " > Working from multi-build/ dir"
 
 function build_cli_client_package {
     ## Zip everything we need to run the source (java binary/jar) on windows/linux cli
@@ -94,7 +97,7 @@ type deactivate 2>/dev/null || { [[ -d "${client_basedir}/.venv" ]] && . ${clien
 
 ## Convert the markdown ReadMe to more universal HTML
 log "Compiling documentation..."
-pandoc -f markdown ../README.md > ${client_basedir}/dist/README.html
+pandoc -f markdown "${client_basedir}/README.md" > "${client_basedir}/dist/README.html"
 
 ## Build each client, then cleanup...
 log "Building clients..."
