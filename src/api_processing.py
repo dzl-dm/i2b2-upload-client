@@ -5,6 +5,7 @@ stderr: for logs
 """
 
 ## library imports
+from functools import cache
 import json
 import logging
 import os
@@ -14,9 +15,10 @@ import sys
 
 class AppMeta():
     """ Purely constants """
+    ## TODO: This should be in setup.py/setup.toml or something
     app_name: str = "DWH client - API processing"
     app_description: str = "Can be used as scrip or module. Allows all API interactions."
-    app_name: str = "0.0.2"
+    app_name: str = "0.0.3"
 
 ## ---------------- ##
 ## Create  settings ##
@@ -37,18 +39,44 @@ logger = logging.getLogger(AppMeta.app_name)
 logger.setLevel(settings.log_level)
 logger.debug("Logging loaded with default configuration")
 
+@cache
+def checkApiUserConnection(apiEndpoint:str = settings.DWH_API_ENDPOINT, apiKey:str = settings.dwh_api_key) -> dict:
+    """ Connect to API and check for 401 response code
+    return {isAuthorized: bool, responseCode: int} 
+    """
+    logger.debug("Connecting to api: %s", apiEndpoint)
+    isAuthorized = False
+    response = requests.get(f'{apiEndpoint.rstrip("/")}/datasource', headers={'x-api-key': apiKey})
+    logger.debug("Response (%s): %s", response.status_code, response)
+    if response.status_code != 401:
+        isAuthorized = True
+    return {"isAuthorized": isAuthorized, "responseCode": response.status_code}
+
+def isValidApiUser(apiUserCheck:dict = None) -> bool:
+    """ Use response from checkApiUserConnection to check for validity """
+    if apiUserCheck is None:
+        apiUserCheck = checkApiUserConnection()
+    if apiUserCheck['isAuthorized'] and apiUserCheck['responseCode'] not in [403]:
+        return True
+    else:
+        logger.error("API connection not valid.")
+        return False
+
 def listDwhSources() -> list:
     """ Convert the response into a plain list """
-    ## Return empty list and error code if curl errors
+    ## Return empty list if no sources on server (but connection succeeded)
+    ## and None if curl/connection errors
     logger.debug("Connecting to api: %s", settings.DWH_API_ENDPOINT)
     response = requests.get(f'{settings.DWH_API_ENDPOINT.rstrip("/")}/datasource', headers={'x-api-key': settings.dwh_api_key})
-    logger.debug("Response: %s", response)
+    logger.debug("Response (%s): %s", response.status_code, response)
     if response.status_code != 200:
         logger.warning("Failed to connect to API")
         return None
     sources = response.json()
     logger.debug("...and data: %s", sources)
-    sourceIds = [source['source_id'] for source in sources]
+    sourceIds = []
+    if len(sources) > 0:
+        sourceIds = [source['source_id'] for source in sources]
     return sourceIds
 
 def sourceStatus(source_id: str) -> dict:
@@ -81,7 +109,7 @@ def deleteSource(source_id: str) -> str:
     if response.status_code == 202:
         return "Accepted request, processing...\nPlease refresh status to check progress"
     else:
-        return f"Error: Something unexpected happedned: {response.status_code}: {response.content}"
+        return f"Error: Something unexpected happended: {response.status_code}: {response.content}"
 
 def uploadSource(source_id: str, sourceFhirBundlePath: str) -> str:
     """ Call endpoint """
@@ -108,26 +136,17 @@ def processSource(source_id: str) -> str:
         return f"Error: Something unexpected happedned: {response.status_code}: {response.content}"
 
 ## CLI action processing
-def cliSummary(check:bool = False):
-    """ Render the summary/list of sources the DWH knows of.
-    If 'check' is True, don't render, just return True/False for connection """
+def cliSummary():
+    """ Render the summary/list of sources the DWH knows of """
     logger.debug("Starting action...")
-    sourceIds = False
     sourceIds = listDwhSources()
-    count = 0
-    while not sourceIds:
-        settings.dwh_api_key = askApiKey()
-        sourceIds = listDwhSources()
-        if count == 3:
-            logger.error("Too many failures, exiting")
-            print("Cannot connect to API. Please check the endpoing and key are entered correctly and that the server is running...")
-            sys.exit(1)
-    if check:
-        return True
     print("List of your sources known to the DWH...")
-    # print(sourceIds)
-    print(PrettyTable(sourceIds))
-    print("You can use these source names to make further queries and updates")
+    if len(sourceIds) == 0:
+        print("No sources available, try uploading a new source first!")
+    else:
+        for sourceId in sourceIds:
+            print(f'> {sourceId}')
+        print("You can use these source names to make further queries and updates")
     print("")
 
 def cliStatus(datasourceName:str):
@@ -275,10 +294,18 @@ if __name__ == "__main__":
     logger.debug("args namespace: %s", args)
 
     ## Check api and key
-    if settings.dwh_api_key == "ChangeMe" and settings.dwh_api_key == "":
+    count = 0
+    while checkApiUserConnection()['isAuthorized'] == False:
+        if count == 3:
+            logger.error("Too many API connection failures, exiting")
+            print("Cannot connect to API. Please check the endpoint and key are entered correctly and that the server is running...")
+            sys.exit(1)
+        count += 1
         settings.dwh_api_key = askApiKey()
-    if cliSummary(True):
-        logger.info("Connection to API checked")
+    if not isValidApiUser():
+        logger.error("Authenticated, but user not valid (%s)", checkApiUserConnection()['responseCode'])
+        print(f"Authenticated, but user not valid. Contact DZL central Data Management for assistance (error code: {checkApiUserConnection()['responseCode']})...")
+        sys.exit(1)
 
     ## Check args for action and complimenting name/file
     if not any(vars(args).values()):
