@@ -175,9 +175,6 @@
         </widget>
        </item>
       </layout>
-      <zorder>secretKeyPasswordEdit</zorder>
-      <zorder>secretKeyLabel</zorder>
-      <zorder>pseudonymizeButton</zorder>
      </widget>
      <widget class="QWidget" name="layoutWidget">
       <property name="geometry">
@@ -281,7 +278,7 @@
        <string>Generate Fhir bundle</string>
       </property>
      </widget>
-     <widget class="QLabel" name="stage1InfoLabel_2">
+     <widget class="QLabel" name="stage2InfoLabel">
       <property name="geometry">
        <rect>
         <x>10</x>
@@ -292,6 +289,38 @@
       </property>
       <property name="text">
        <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;Stage 2:&lt;/span&gt; Choose or adjust the &amp;quot;RAW fhir bundle&amp;quot; to pseudonymize and adjust the &amp;quot;DWH fhir bundle&amp;quot; as output and use your private pseudonymisation key - generate like a password first time, then always use the same key/password.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+      </property>
+      <property name="wordWrap">
+       <bool>true</bool>
+      </property>
+     </widget>
+     <widget class="QLabel" name="stage2StatusLabel">
+      <property name="geometry">
+       <rect>
+        <x>230</x>
+        <y>390</y>
+        <width>521</width>
+        <height>31</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:12pt; font-weight:600;&quot;&gt;Stage 2 &lt;/span&gt;Pending...&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+      </property>
+      <property name="wordWrap">
+       <bool>true</bool>
+      </property>
+     </widget>
+     <widget class="QLabel" name="stage1StatusLabel">
+      <property name="geometry">
+       <rect>
+        <x>230</x>
+        <y>170</y>
+        <width>521</width>
+        <height>31</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:12pt; font-weight:600;&quot;&gt;Stage 1 &lt;/span&gt;Pending...&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
       </property>
       <property name="wordWrap">
        <bool>true</bool>

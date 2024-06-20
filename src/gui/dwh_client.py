@@ -190,6 +190,7 @@ class DwhClientWindow(QMainWindow, Ui_MainWindow):
             ## Windows class path separator
             javaCpSep = ';'
         javaCp = javaCpSep.join(libs)
+        proc = None
         ## Actual work - write streamed output to file
         with open(self.rawFhirFileText.text(), 'w') as rawFhir:
             logger.info("Running java subprocess.Popen to generate fhir")
@@ -200,7 +201,12 @@ class DwhClientWindow(QMainWindow, Ui_MainWindow):
                 if not line:
                     break
                 rawFhir.write(line.decode())
-        logger.info("Fhir generation complete")
+        if proc.returncode == 0:
+            self.stage1statusLabel.append(f"<b>Stage 1:</b> Completed successfully!")
+            logger.info("Fhir generation complete")
+        else:
+            self.stage1statusLabel.append(f"<b>Stage 1:</b> Processing failed with return code: '{proc.returncode}'<br/>Please check your datasource.xml mapping configuration. Ensure you have timezone set (see readme for guidance)")
+            logger.error("Fhir generation had errors (return code: %s)...", proc.returncode)
 
     def pseudonymizeButton_hover(self):
         """ Verify and enable/disable click action """
@@ -230,6 +236,7 @@ class DwhClientWindow(QMainWindow, Ui_MainWindow):
         # try: self.pseudonymizeButton.clicked.disconnect()
         # except Exception: pass
         self.pseudonymizeButton.setEnabled(False)
+        proc = None
         ## Stream raw fhir as input and write output as stream from streamed stdout
         with open(self.rawFhirFileText.text(), 'r') as rawFhir:
             with open(self.dwhFhirFileText.text(), 'w') as dwhFhir:
@@ -243,7 +250,12 @@ class DwhClientWindow(QMainWindow, Ui_MainWindow):
                     if not line:
                         break
                     dwhFhir.write(line.decode())
-        logger.info("Pseudonymisation complete")
+        if proc.returncode == 0:
+            self.stage1statusLabel.append(f"<b>Stage 2:</b> Completed successfully!")
+            logger.info("Pseudonymization complete")
+        else:
+            self.stage1statusLabel.append(f"<b>Stage 2:</b> Pseudonymization failed with return code: '{proc.returncode}'<br/>Please check all file references are correct and that stage 1 has completed successfully.")
+            logger.error("Pseudonymization had errors (return code: %s)...", proc.returncode)
 
     ## DWH processing
     def dwhUploadFhirFilePickerClicked(self):
