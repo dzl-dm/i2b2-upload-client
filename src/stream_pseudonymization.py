@@ -175,6 +175,7 @@ def _hash_ids(given_name:str, surname:str, birthdate:str, salt:str = settings.se
     #logger.debug("Creating user pseudonym...")
     return hashlib.sha3_256(
         "{salt}{sep}{given_name}{sep}{surname}{sep}{birthdate}".format(
+            sep=sep,
             salt=salt.encode('UTF-8'),
             given_name=given_name,
             surname=surname,

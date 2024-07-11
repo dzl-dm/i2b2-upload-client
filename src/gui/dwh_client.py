@@ -30,7 +30,7 @@ class AppMeta():
     """ Purely constants """
     app_name: str = "DWH client"
     app_description: str = "A PySide6 (QT6) interactive GUI to upload fhir bundle to DWH server API"
-    app_version: str = "0.0.1-beta1"
+    app_version: str = "0.0.2-beta"
 
 ## ---------------- ##
 ## Create  settings ##
@@ -195,17 +195,19 @@ class DwhClientWindow(QMainWindow, Ui_MainWindow):
         with open(self.rawFhirFileText.text(), 'w') as rawFhir:
             logger.info("Running java subprocess.Popen to generate fhir")
             proc = subprocess.Popen([settings.compatible_java,'-Dfile.encoding=UTF-8', '-cp', javaCp, 'de.sekmi.histream.etl.ExportFHIR', self.dsConfigFileText.text()], stdout=subprocess.PIPE)
-            # proc = subprocess.Popen(['/usr/lib/jvm/java-8-openjdk/jre/bin/java','-Dfile.encoding=UTF-8', '-cp', javaCp, 'de.sekmi.histream.etl.ExportFHIR', self.dsConfigFileText.text()], stdout=subprocess.PIPE)
             while True:
                 line = proc.stdout.readline()
                 if not line:
                     break
                 rawFhir.write(line.decode())
+        proc.communicate()
         if proc.returncode == 0:
-            self.stage1statusLabel.append(f"<b>Stage 1:</b> Completed successfully!")
+            self.stage1StatusLabel.setText("<b style='color:green; font-size:12pt;'>Status:</b>")
+            self.stage1StatusText.setText("Completed successfully!")
             logger.info("Fhir generation complete")
         else:
-            self.stage1statusLabel.append(f"<b>Stage 1:</b> Processing failed with return code: '{proc.returncode}'<br/>Please check your datasource.xml mapping configuration. Ensure you have timezone set (see readme for guidance)")
+            self.stage1StatusLabel.setText("<b style='color:red; font-size:12pt;'>Status:</b>")
+            self.stage1StatusText.setText(f"Processing failed with return code: '{proc.returncode}'<br/>Please check your datasource.xml mapping configuration. Ensure you have timezone set (see readme for guidance)")
             logger.error("Fhir generation had errors (return code: %s)...", proc.returncode)
 
     def pseudonymizeButton_hover(self):
@@ -250,11 +252,16 @@ class DwhClientWindow(QMainWindow, Ui_MainWindow):
                     if not line:
                         break
                     dwhFhir.write(line.decode())
+        proc.communicate()
         if proc.returncode == 0:
-            self.stage1statusLabel.append(f"<b>Stage 2:</b> Completed successfully!")
+            # self.stage2StatusLabel.append(f"<b>Stage 2:</b> Completed successfully!")
+            self.stage2StatusLabel.setText("<b style='color:green; font-size:12pt;'>Status:</b>")
+            self.stage2StatusText.setText('<html><head/><body><p><span style=" font-size:12pt; font-weight:600;">Stage 2:</span> Completed successfully!</p></body></html>')
             logger.info("Pseudonymization complete")
         else:
-            self.stage1statusLabel.append(f"<b>Stage 2:</b> Pseudonymization failed with return code: '{proc.returncode}'<br/>Please check all file references are correct and that stage 1 has completed successfully.")
+            # self.stage2StatusLabel.append(f"<b>Stage 2:</b> Pseudonymization failed with return code: '{proc.returncode}'<br/>Please check all file references are correct and that stage 1 has completed successfully.")
+            self.stage2StatusLabel.setText("<b style='color:red; font-size:12pt;'>Status:</b>")
+            self.stage2StatusText.setText(f'<html><head/><body><p><span style=" font-size:12pt; font-weight:600;">Stage 2:</span> Pseudonymization failed with return code: \'{proc.returncode}\'<br/>Please check all file references are correct and that stage 1 has completed successfully.</p></body></html>')
             logger.error("Pseudonymization had errors (return code: %s)...", proc.returncode)
 
     ## DWH processing
