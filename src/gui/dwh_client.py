@@ -28,9 +28,9 @@ import time
 
 class AppMeta():
     """ Purely constants """
-    app_name: str = "DWH client"
+    app_name: str = "DWH Upload Client"
     app_description: str = "A PySide6 (QT6) interactive GUI to upload fhir bundle to DWH server API"
-    app_version: str = "0.0.2-beta"
+    app_version: str = "0.0.3-beta"
 
 ## ---------------- ##
 ## Create  settings ##
@@ -71,7 +71,7 @@ class DwhClientWindow(QMainWindow, Ui_MainWindow):
         self.setupUi(self)
 
         ## Set the app constants
-        self.setWindowTitle(f'{AppMeta().app_name} - {AppMeta().app_version}')
+        self.setWindowTitle(AppMeta().app_name)
         self.versionIndicatorLabel.setText(f'Version: {AppMeta().app_version}')
         self.versionIndicatorLabel.setToolTip(AppMeta().app_description)
         self.setWindowIcon(PySide6.QtGui.QIcon(os.path.join(projectRoot, 'resources', 'DzlLogoSymmetric.webp')))
@@ -272,19 +272,19 @@ class DwhClientWindow(QMainWindow, Ui_MainWindow):
             self.newDsFileEdit.setText(fileName)
     def uploadSource(self):
         """ User confirm, then upload bundle """
+        source_id = self.newDsNameEdit.text()
         confirmation = QMessageBox(self)
         confirmation.setWindowTitle("Confirm action")
         confirmation.setStandardButtons(QMessageBox.Yes | QMessageBox.No)
-        confirmation.setText(f"Are you sure you want to upload new data for <b>'{self.newDsNameEdit.text()}'</b> from file:<br/><br/>{self.newDsFileEdit.text()}")
+        confirmation.setText(f"Are you sure you want to upload new data for <b>'{source_id}'</b> from file:<br/><br/>{self.newDsFileEdit.text()}")
         response = confirmation.exec()
 
         if response == QMessageBox.Yes:
-            logger.info("Uploading new data for '%s'", self.newDsNameEdit.text())
+            logger.info("Uploading new data for '%s'", source_id)
             self.informUserApi(f"[{nowTimeStamp()}] Starting upload", clearInfo=True)
-            ## If file big enough, compress before upload
+            ## If file big enough (over 1mb), compress before upload
             realUploadFilePath = self.newDsFileEdit.text()
             if os.path.getsize(self.newDsFileEdit.text()) > 1000000:
-            # if os.path.getsize(self.newDsFileEdit.text()) > 100:
                 logger.info("Compressing before upload...")
                 self.informUserApi(f"[{nowTimeStamp()}] Compressing before upload...")
                 ## TODO: The uplaod is currently hard-coded to always be saved with this name, even if compressed
@@ -299,11 +299,30 @@ class DwhClientWindow(QMainWindow, Ui_MainWindow):
                 if os.path.basename(self.newDsFileEdit.text()) != serverBundleName:
                     os.rename(os.path.join(os.path.dirname(self.newDsFileEdit.text()), serverBundleName), self.newDsFileEdit.text())
             self.informUserApi(f"[{nowTimeStamp()}] Uploading...")
-            self.sourceInfoErrorBrowser.append(f"<b>API response:</b> {api_processing.uploadSource(self.newDsNameEdit.text(), realUploadFilePath)}")
+            self.sourceInfoErrorBrowser.append(f"<b>API response:</b> {api_processing.uploadSource(source_id, realUploadFilePath)}")
             if realUploadFilePath != self.newDsFileEdit.text():
                 os.remove(realUploadFilePath)
             self.informUserApi(f"[{nowTimeStamp()}] Upload complete, check status.")
-            self.showCurrentSourceStatus()
+            self.uploadCompletion(source_id)
+    def uploadCompletion(self, source_id: str):
+        """ Post upload processing """
+        logger.info("Processing upload completion for source: %s", source_id)
+        self.getDsList()
+        # if self.getUserId() is not None:
+            # source_id = f"{self.getUserId()}_{source_id}"
+            # self.dsSelected(source_id)
+        index = self.dsChooseComboBox.findText(source_id)
+        logger.debug("Updating combo box with source (%s): %s", index, source_id)
+        if index >= 0:
+            self.dsChooseComboBox.setCurrentIndex(index)
+            self.dsSelected(source_id)
+    def getUserId(self):
+        """ First use prefix of first item """
+        userId = None
+        if self.dsChooseComboBox.count() > 0:
+            userId = self.dsChooseComboBox.itemText(0).split("_")[0]
+        log.debug("UserId: %s", userId)
+        return userId
 
     def uploadButton_hover(self):
         """ Verify and enable/disable click action """
@@ -350,15 +369,30 @@ class DwhClientWindow(QMainWindow, Ui_MainWindow):
 
     def dsSelected(self, source_id: str):
         """ Update selected DS """
-        logger.info("Updating source: %s", source_id)
+        logger.info("Selecting source and showing info for: %s", source_id)
         self.sourceInfoErrorBrowser.clear()
         if not source_id:
             self.selectedSourceId = None
         else:
             self.selectedSourceId = source_id
-        if self.selectedSourceId is not None:
-            self.showCurrentSourceStatus()
-    def showCurrentSourceStatus(self):
+            selectedSourceStatus = self.showCurrentSourceStatus()
+            # logger.debug("Selected source status: %s", selectedSourceStatus)
+            self.newDsNameEdit.setText(self.selectedSourceId)
+            logger.debug("status: %s", dict.get(selectedSourceStatus, 'status', 'Unavailable'))
+            # if dict.get(selectedSourceStatus, 'status', 'Unavailable') == 'Uploaded':
+            if 'status' in selectedSourceStatus and selectedSourceStatus['status'] == 'Uploaded':
+                logger.debug("Setting link line to green")
+                self.uploadProcessLinkLine.setStyleSheet("color: green")
+                self.uploadProcessLinkLine_2.setStyleSheet("color: green")
+                self.uploadProcessLinkLine_3.setStyleSheet("color: green")
+                self.updateSourcePushButton.setStyleSheet("background-color: green; font: bold; color: black;")
+            else:
+                logger.debug("Setting link line to grey")
+                self.uploadProcessLinkLine.setStyleSheet("color: gray")
+                self.uploadProcessLinkLine_2.setStyleSheet("color: gray")
+                self.uploadProcessLinkLine_3.setStyleSheet("color: gray")
+                self.updateSourcePushButton.setStyleSheet("")
+    def showCurrentSourceStatus(self) -> dict:
         """ Show user status of selected source """
         dsStatus = api_processing.sourceStatus(self.selectedSourceId)
         self.dsStatusTableWidget.setItem(0, 0, QTableWidgetItem(dict.get(dsStatus, 'source_id', 'Unavailable')))
@@ -366,6 +400,7 @@ class DwhClientWindow(QMainWindow, Ui_MainWindow):
         self.dsStatusTableWidget.setItem(0, 2, QTableWidgetItem(dict.get(dsStatus, 'sourcesystem_cd', 'Unavailable')))
         self.dsStatusTableWidget.setItem(0, 3, QTableWidgetItem(dict.get(dsStatus, 'last_activity', 'Unavailable')))
         self.dsStatusTableWidget.setItem(0, 4, QTableWidgetItem(dict.get(dsStatus, 'last_update', 'Unavailable')))
+        return dsStatus
     def deleteDs(self):
         """ User confirm, then call delete endpoint and show response """
         confirmation = QMessageBox(self)

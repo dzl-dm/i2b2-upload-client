@@ -5,19 +5,23 @@ This application uses 3 components to upload patient data to a Data Warehouse. T
 1. Upload to the DWH and manage the status of the data
 
 ## Stage 1: FHIR conversion
-We use a helper file, usually call this the `datasource.xml`. Its a custom xml definition of how the csv patient data is formatted after any custom transformation you have done (which files, which columns map to which parameters, etc). A java program uses the XML configuration to convert the data into a fhir bundle in XML.
+We use a helper file, usually called the `datasource.xml`. Its a custom xml definition of how the csv patient data is formatted after any custom transformation you have done (which files, which columns map to which parameters, etc). A java program uses the XML configuration to convert the data into a fhir bundle in XML.
 
 ## Stage 2: Pseudonymization
 Data protection is very important, so this stage removes the name information and creates a non-reversible (but still deterministic) ID as the pseudonym for the patient. You must provide a secret key (a long, random string you generate yourself and keep secret) so that only you generate the pseudonym for the patients. If someone else were to run this stage with their secret key, it would not produce compatible pseudonyms. Record linkage can be achieved by sharing the secret key. This makes sense in environments where multiple people manage different parts of the same data set.
+> NOTE: If you already use pseudonyms, we don't require that you also use our pseudonymisation process. Once your data is uploaded, personal information such as patient name is not used. We remove this client-side during pseudonymization, but don't _yet_ provide an option to remove it without also generating new pseudonyms.
 
 ## Stage 3: Upload and DWH management
-You can add, update and delete the data in this stage. You must provide your API key (will be provided to you when you are invited to use the upload system). You can also view the status of each source that you have already added to the DWH. Important to note, is that the upload and processing parts of "adding" a data source are separate. You must manually tell the DWH to process the uploaded data once the upload is complete.
+In the base upload case, this is a two part process, where you must trigger each part manaully:
+* Upload - Send the FHIR data
+* Process - Integrate into the DWH database
+You can add, update and delete the data in this stage. You must provide your API key (will be provided to you when you are invited to use the upload system). You can also view the status of each source that you have already added to the DWH.
 
 # The GUI client
 I have developed a Graphical User Interface (GUI) which uses the same background code as the [command line client](#the-cli-client). It "simply" adds a visual interface to make the process more intuitive and less error prone.
 
 ## Using the GUI client
-The GUI is designed to be intuitive so does not need much explanation here. You should recognise the main 3 stages from above and be able to associate the relevant fields and actions. Some fields are auto-filled with suggested file paths, you can still choose to change them.
+The GUI is designed to be intuitive so does not need much explanation here. You should recognise the main 3 stages from above and be able to associate the relevant fields and actions. Some fields are auto-filled with expected file paths, you can still choose to change them.
 
 ## Installing the GUI client
 There are 3 versions of this client, each provides the same interface but are implemented differently which may be more or less compatible with your system.
@@ -32,6 +36,7 @@ set secret_key=ChangeMe
 set dwh_api_key=ChangeMe
 call drive:\path\to\dwh_client.exe
 ```
+Where the last line should support the env variable. E.g. `$env:USERPROFILE\dzl\dwh_client.exe`
 Then this can be executed or called from the cmd console with:
 ```
 call launch-dwh-client.bat
@@ -132,7 +137,7 @@ pyinstaller --onefile --add-data="resources:resources" --add-data="src:src" --ad
 
 
 # Manual CLI mode (eg for automation)
-You should be able to follow the (Client setup)[#Client-setup] part once, then be able to run the stages directly any time.
+This is as raw as it gets, there are no helper scripts for each stage, just the direct commands. It has the fewest dependencies, but you must setup everything manually. You should be able to follow the (Client setup)[#Client-setup] part once, then be able to run the stages directly any time.
 
 ## Client setup
 We need to set the following 2 keys for the client to use when you open a new cmd/shell to use the client.
@@ -145,7 +150,7 @@ export secret_key=""
 export dwh_api_key=""
 ```
 > You will be provided with the `dwh_api_key` when you are granted access to upload data to the DWH.
-> You should generate the `secret_key` as a long random string (like a password). Use the same one for all datasets unless you want to remove the possibility of record linkage between datasets. Share the key only when soemone else is also managing complimentary data for the same patients (eg observational data and bionbank data)
+> You should generate the `secret_key` as a long random string (like a password). Use the same one for all datasets unless you want to remove the possibility of record linkage between datasets. Share the key only when soemone else is also managing complimentary data for the same patients (eg observational data and biobank data)
 
 We also need to install python libraries:
 ```
@@ -175,6 +180,8 @@ The processing stages will use intermediate files which can safely be deleted af
 ## Stage 1:
 You must use java version 8 (1.8) or 11. Check with `java -version`. You can have multiple versions installed, you may need to research how to run a specific version on your system (and potentially replace the initial `java` command below with the specific, desired java version).
 ```sh
+## Windows
+java -Dfile.encoding="UTF-8" -cp "$env:USERPROFILE\dzl\cli-client\lib\*" de.sekmi.psd.client.Application datasource.xml > client-output/fhir_raw.xml
 ## Linux
 java -Dfile.encoding="UTF-8" -cp /path/to/cli-client/lib/\* de.sekmi.histream.etl.ExportFHIR ./datasource.xml > client-output/fhir_raw.xml
 ```
@@ -191,11 +198,13 @@ cat client-output/fhir_raw.xml | /path/to/cli-client/src/stream_pseudonymization
 Stage 3 encompases all the interactions with the DWH API. There are multiple things you can do, 2 at minimum are vital to upload data.
 ### Part a:
 ```sh
+## Upload
 /path/to/cli-client/src/api_processing.py -u -n "My Source Name" -f ./client-output/fhir_dwh.xml
 ```
 
 ### Part b:
 ```sh
+## Process
 /path/to/cli-client/src/api_processing.py -p -n "My Source Name"
 ```
 > At this point, if there weren't any errors, the data is uploaded and available in the Data Warehouse. You can use some of the following guidance to view more information and delete the data from the Data Warehouse.
