@@ -1,21 +1,48 @@
 # i2b2 upload client
 This application uses 3 components to upload patient data to a Data Warehouse. To use the application, you do not need to have a technical understanding of each part, they are however visible as a user so you must be aware of the broad process and what is required of you at each stage. Each stage can be run independently from the other.
+
 1. Convert CSV data into standardized a FHIR bundle in XML format
 1. Pseudonymize the identifiable data (if it isn't already)
 1. Upload to the DWH and manage the status of the data
 
-## Stage 1: FHIR conversion
-We use a helper file, usually called the `datasource.xml`. Its a custom xml definition of how the csv patient data is formatted after any custom transformation you have done (which files, which columns map to which parameters, etc). A java program uses the XML configuration to convert the data into a fhir bundle in XML.
+## Stage 1 - FHIR conversion
+For each dataset you want to upload, you need the data (already transformed into csv files) and a `datasource.xml` configuration file, which maps the csv data to standard, internationally recognised concept codes. This is the same as with the previous client, however, we need to add an extra XML tag for timezone within the "\<meta\>" element.
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<datasource version="1.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+	<meta>
+		<id>...</id>
+		<etl-strategy>...</etl-strategy>
+		<version-date>...</version-date>
+		<timezone>Europe/Berlin</timezone> <!-- ADD THIS LINE -->
+	</meta>
+...
+</datasource>
+```
+A java program uses the XML configuration to convert the data into a fhir bundle in XML.
 
-## Stage 2: Pseudonymization
-Data protection is very important, so this stage removes the name information and creates a non-reversible (but still deterministic) ID as the pseudonym for the patient. You must provide a secret key (a long, random string you generate yourself and keep secret) so that only you generate the pseudonym for the patients. If someone else were to run this stage with their secret key, it would not produce compatible pseudonyms. Record linkage can be achieved by sharing the secret key. This makes sense in environments where multiple people manage different parts of the same data set.
+## Stage 2 - Pseudonymization
+Data protection is very important, so this stage removes the name information and creates a non-reversible (but still deterministic) ID as the pseudonym for the patient. You must provide a `secret key` (a long, random string you generate yourself and keep secret) so that only you generate the pseudonym for the patients. If someone else were to run this stage with their secret key, it would not produce compatible pseudonyms. Record linkage can be achieved by sharing the secret key. This makes sense in environments where multiple people manage different parts of the same data set.
 > NOTE: If you already use pseudonyms, we don't require that you also use our pseudonymisation process. Once your data is uploaded, personal information such as patient name is not used. We remove this client-side during pseudonymization, but don't _yet_ provide an option to remove it without also generating new pseudonyms.
 
-## Stage 3: Upload and DWH management
+## Stage 3 - Upload and DWH management
 In the base upload case, this is a two part process, where you must trigger each part manaully:
+
 * Upload - Send the FHIR data
 * Process - Integrate into the DWH database
-You can add, update and delete the data in this stage. You must provide your API key (will be provided to you when you are invited to use the upload system). You can also view the status of each source that you have already added to the DWH.
+
+You can add, update and delete the data in this stage. You must provide your `API key` (will be provided to you when you are invited to use the upload system). You can also view the status of each source that you have already added to the DWH.
+
+## Summary
+What you need to make an upload:
+
+* Transformed data as `.csv` file(s)
+* Compatible `datasource.xml`
+* A self generated `secret_key` also called `Pseudonymization key`
+* A provided `dwh_api_key` also called `API key`
+* A working upload client (graphical or command line). Requires:
+	* Java v8 or v11
+	* Python v3.7+
 
 # The GUI client
 I have developed a Graphical User Interface (GUI) which uses the same background code as the [command line client](#the-cli-client). It "simply" adds a visual interface to make the process more intuitive and less error prone.
@@ -95,6 +122,7 @@ python .\src\api_processing.py -p --name "MyData"
 ```
 
 Options:
+
 * _list/summarize:_ Show overview/summary of the datasources for your user
 * _info/error:_ Show info for most recent upload or error (if there are any)
 * _upload:_ Upload a file with a fhir bundle of data
@@ -112,6 +140,7 @@ C:\Users\me\Downloads\cli-client\install.bat
 The project can be used as 3 separate "scripts" to perform each part, or using an interface to combine them which is more intuative for the user.
 
 ## The GUI
+
 * Design in Qt Designer - a graphical tool for building Qt framework based interfaces.
 * Convert to a python class with a command. 
 * Code actions in window class inheriting from generated class.
@@ -159,21 +188,10 @@ pip install -r /path/to/cli-client/src/requirements.txt
 > Using venv or similar tools is beyond the scope of this readme
 
 ## Per-dataset preparation
-For each dataset you want to upload, you need the data (already transformed into csv files) and a `datasource.xml` configuration file, which maps the csv data to standard, internationally recognised concept codes. This is the same as with the previous client, however, we need to add an extra XML tag in the `datasource.xml`.
-```xml
-<?xml version="1.0" encoding="UTF-8"?>
-<datasource version="1.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
-	<meta>
-		<id>...</id>
-		<etl-strategy>...</etl-strategy>
-		<version-date>...</version-date>
-		<timezone>Europe/Berlin</timezone> <!-- ADD THIS LINE -->
-	</meta>
-...
-</datasource>
-```
+For each dataset you want to upload, you need the data (already transformed into csv files) and a `datasource.xml` configuration file. Please ensure it is adapted as described in [Stage 1: FHIR conversion](#stage-1---fhir-conversion)
 
 The processing stages will use intermediate files which can safely be deleted after the upload. You can choose what to call them:
+
 * Stage 1 output: A FHIR bundle of the whole dataset in XML format (eg `fhir_raw.xml`)
 * Stage 2 output: Pseudonymize the existing patient identifying data in the fhir_raw.xml (eg `fhir_dwh.xml`)
 
@@ -181,17 +199,17 @@ The processing stages will use intermediate files which can safely be deleted af
 You must use java version 8 (1.8) or 11. Check with `java -version`. You can have multiple versions installed, you may need to research how to run a specific version on your system (and potentially replace the initial `java` command below with the specific, desired java version).
 ```sh
 ## Windows
-java -Dfile.encoding="UTF-8" -cp "$env:USERPROFILE\dzl\cli-client\lib\*" de.sekmi.psd.client.Application datasource.xml > client-output/fhir_raw.xml
+java -Dfile.encoding="UTF-8" -cp "$env:USERPROFILE\dzl\cli-client\lib\*" de.sekmi.histream.etl.ExportFHIR datasource.xml > output-fhir_raw.xml
 ## Linux
-java -Dfile.encoding="UTF-8" -cp /path/to/cli-client/lib/\* de.sekmi.histream.etl.ExportFHIR ./datasource.xml > client-output/fhir_raw.xml
+java -Dfile.encoding="UTF-8" -cp /path/to/cli-client/lib/\* de.sekmi.histream.etl.ExportFHIR ./datasource.xml > output-fhir_raw.xml
 ```
 
 ## Stage 2:
 ```sh
 ## Windows
-type client-output/fhir_raw.xml | /path/to/cli-client/src/stream_pseudonymization.py > client-output/fhir_dwh.xml
+type output-fhir_raw.xml | /path/to/cli-client/src/stream_pseudonymization.py > output-fhir_dwh.xml
 ## Linux
-cat client-output/fhir_raw.xml | /path/to/cli-client/src/stream_pseudonymization.py > client-output/fhir_dwh.xml
+cat output-fhir_raw.xml | /path/to/cli-client/src/stream_pseudonymization.py > output-fhir_dwh.xml
 ```
 
 ## Stage 3:
@@ -199,7 +217,7 @@ Stage 3 encompases all the interactions with the DWH API. There are multiple thi
 ### Part a:
 ```sh
 ## Upload
-/path/to/cli-client/src/api_processing.py -u -n "My Source Name" -f ./client-output/fhir_dwh.xml
+/path/to/cli-client/src/api_processing.py -u -n "My Source Name" -f ./output-fhir_dwh.xml
 ```
 
 ### Part b:
