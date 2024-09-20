@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>800</width>
-    <height>600</height>
+    <height>585</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -16,6 +16,9 @@
   <property name="windowIcon">
    <iconset>
     <normaloff>../../resources/DzlLogoSymmetric.webp</normaloff>../../resources/DzlLogoSymmetric.webp</iconset>
+  </property>
+  <property name="statusTip">
+   <string notr="true"/>
   </property>
   <property name="styleSheet">
    <string notr="true"/>
@@ -28,7 +31,7 @@
     <property name="geometry">
      <rect>
       <x>640</x>
-      <y>520</y>
+      <y>510</y>
       <width>151</width>
       <height>20</height>
      </rect>

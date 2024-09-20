@@ -30,7 +30,7 @@ class AppMeta():
     """ Purely constants """
     app_name: str = "DWH Upload Client"
     app_description: str = "A PySide6 (QT6) interactive GUI to upload fhir bundle to DWH server API"
-    app_version: str = "0.0.3-beta"
+    app_version: str = "0.0.8-beta"
 
 ## ---------------- ##
 ## Create  settings ##
