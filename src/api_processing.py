@@ -18,7 +18,7 @@ class AppMeta():
     ## TODO: This should be in setup.py/setup.toml or something
     app_name: str = "DWH client - API processing"
     app_description: str = "Can be used as script or module. Allows all API interactions."
-    app_name: str = "0.0.4"
+    app_name: str = "0.0.5"
 
 ## ---------------- ##
 ## Create  settings ##
@@ -211,7 +211,7 @@ def cliProcess(datasourceName:str):
         sys.exit(2)
     print(f"About to process source: '{datasourceName}'")
     print("This means the file upload will be added to the DWH database")
-    if areYouSure():
+    if args.yes >= 1 or areYouSure():
         print(f"Processing source: '{datasourceName}'")
         apiResponse = processSource(datasourceName)
         logger.info("Source processed: '%s'", datasourceName)
@@ -229,7 +229,7 @@ def cliDelete(datasourceName:str):
         logger.error("Remote source '%s' not recognised, aborting")
         sys.exit(2)
     print(f"About to delete source: '{datasourceName}'")
-    if areYouSure():
+    if args.yes >= 2 or areYouSure():
         print(f"Deleting source: '{datasourceName}'")
         apiResponse = deleteSource(datasourceName)
         logger.info("Source deleted: '%s'", datasourceName)
@@ -275,6 +275,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(prog=AppMeta.app_name, description=AppMeta.app_description)
     parser.add_argument('--version', action='version', version=AppMeta.app_name)
     parser.add_argument('-v', '--verbose', action='count', help='Increase verbosity (multiple allowed).')
+    parser.add_argument('-y', '--yes', action='count', default=0, help='Assume yes. Don\'t prompt for action confirmations (1x allow updates, 2x allow removal)')
     ## Application specific parameters
     action = parser.add_mutually_exclusive_group(required=True)
     action.add_argument('-l', '-S', '--list', '--summary', action='store_true', help='Fetch summary list of sources from the DWH.')
