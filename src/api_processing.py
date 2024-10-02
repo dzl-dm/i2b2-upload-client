@@ -17,8 +17,8 @@ class AppMeta():
     """ Purely constants """
     ## TODO: This should be in setup.py/setup.toml or something
     app_name: str = "DWH client - API processing"
-    app_description: str = "Can be used as scrip or module. Allows all API interactions."
-    app_name: str = "0.0.3"
+    app_description: str = "Can be used as script or module. Allows all API interactions."
+    app_name: str = "0.0.4"
 
 ## ---------------- ##
 ## Create  settings ##
@@ -28,7 +28,7 @@ class Settings(BaseSettings):
     log_level: str = "WARNING"
     log_format: str = "[%(asctime)s] {%(name)s/%(module)s:%(lineno)d (%(funcName)s)} %(levelname)s - %(message)s"
     DWH_API_ENDPOINT: str = "https://data.dzl.de/api"
-    dwh_api_key: str = "ChangeMe"
+    dwh_api_key: str = ""
 settings = Settings()
 
 ## Load logger for this file/script
@@ -40,10 +40,15 @@ logger.setLevel(settings.log_level)
 logger.debug("Logging loaded with default configuration")
 
 @cache
-def checkApiUserConnection(apiEndpoint:str = settings.DWH_API_ENDPOINT, apiKey:str = settings.dwh_api_key) -> dict:
+def checkApiUserConnection(apiEndpoint:str = None, apiKey:str = None) -> dict:
     """ Connect to API and check for 401 response code
     return {isAuthorized: bool, responseCode: int} 
     """
+    ## Pick up defaults here, in case they are changed after loading the module
+    if apiEndpoint is None:
+        apiEndpoint = settings.DWH_API_ENDPOINT
+    if apiKey is None:
+        apiKey = settings.dwh_api_key
     logger.debug("Connecting to api: %s", apiEndpoint)
     isAuthorized = False
     response = requests.get(f'{apiEndpoint.rstrip("/")}/datasource', headers={'x-api-key': apiKey})
@@ -295,7 +300,7 @@ if __name__ == "__main__":
 
     ## Check api and key
     count = 0
-    while checkApiUserConnection()['isAuthorized'] == False:
+    while (apiConnection := checkApiUserConnection(apiKey = settings.dwh_api_key))['isAuthorized'] == False:
         if count == 3:
             logger.error("Too many API connection failures, exiting")
             print("Cannot connect to API. Please check the endpoint and key are entered correctly and that the server is running...")
@@ -303,8 +308,8 @@ if __name__ == "__main__":
         count += 1
         settings.dwh_api_key = askApiKey()
     if not isValidApiUser():
-        logger.error("Authenticated, but user not valid (%s)", checkApiUserConnection()['responseCode'])
-        print(f"Authenticated, but user not valid. Contact DZL central Data Management for assistance (error code: {checkApiUserConnection()['responseCode']})...")
+        logger.error("Authenticated, but user not valid (%s)", apiConnection['responseCode'])
+        print(f"Authenticated, but user not valid. Contact DZL central Data Management for assistance (error code: {apiConnection['responseCode']})...")
         sys.exit(1)
 
     ## Check args for action and complimenting name/file
