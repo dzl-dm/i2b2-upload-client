@@ -18,7 +18,7 @@ class AppMeta():
     ## TODO: This should be in setup.py/setup.toml or something
     app_name: str = "DWH client - API processing"
     app_description: str = "Can be used as script or module. Allows all API interactions."
-    app_name: str = "0.0.5"
+    app_version: str = "v0.0.6"
 
 ## ---------------- ##
 ## Create  settings ##
@@ -38,6 +38,7 @@ logging.basicConfig(format=settings.log_format)
 logger = logging.getLogger(AppMeta.app_name)
 logger.setLevel(settings.log_level)
 logger.debug("Logging loaded with default configuration")
+logger.info("Running app '%s' version: %s", AppMeta.app_name, AppMeta.app_version)
 
 @cache
 def checkApiUserConnection(apiEndpoint:str = None, apiKey:str = None) -> dict:
