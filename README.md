@@ -179,7 +179,10 @@ export secret_key=""
 export dwh_api_key=""
 ```
 > You will be provided with the `dwh_api_key` when you are granted access to upload data to the DWH.
-> You should generate the `secret_key` as a long random string (like a password). Use the same one for all datasets unless you want to remove the possibility of record linkage between datasets. Share the key only when soemone else is also managing complimentary data for the same patients (eg observational data and biobank data)
+
+> You should generate the `secret_key` as a long random string (like a password). Use the same one for all datasets unless you want to remove the possibility of record linkage between datasets. Share the key only when someone else is also managing complimentary data for the same patients (eg observational data and biobank data)
+
+> __Note for Windows:__ From my experience, the `set` command only works in an admin cmd window. This application has no requirement for admin privileges. It seems also possible to use a different syntax under powershell. eg for __secret_key__: `[Environment]::SetEnvironmentVariable("secret_key", "ChangeMe", "User")` where "User" is literal, not the username.
 
 We also need to install python libraries:
 ```
@@ -211,6 +214,9 @@ type output-fhir_raw.xml | /path/to/cli-client/src/stream_pseudonymization.py > 
 ## Linux
 cat output-fhir_raw.xml | /path/to/cli-client/src/stream_pseudonymization.py > output-fhir_dwh.xml
 ```
+> __NOTE:__ Depending on your environment, you may need to prefix the python script with your python executable. Under windows, this is often `py`. eg `
+type output-fhir_raw.xml | py /path/to/cli-client/src/stream_pseudonymization.py > output-fhir_dwh.xml
+`
 
 ## Stage 3:
 Stage 3 encompases all the interactions with the DWH API. There are multiple things you can do, 2 at minimum are vital to upload data.
@@ -226,6 +232,8 @@ Stage 3 encompases all the interactions with the DWH API. There are multiple thi
 /path/to/cli-client/src/api_processing.py -p -n "My Source Name"
 ```
 > At this point, if there weren't any errors, the data is uploaded and available in the Data Warehouse. You can use some of the following guidance to view more information and delete the data from the Data Warehouse.
+
+> __NOTE:__ The `api_processing.py` command demands interactive confirmation of changes to the database (_part b_ processes the changes, so will update the database. Deleting a datasource would also require confirmation). For automation, I have added a `-y` flag (for "yes"). If this is added to the _part b_ command, it will no longer prompt for confirmation.
 
 ## View and manage data sources
 Information on how to get more from the Data Warehouse's API. List all sources, view status and details about each source, delete sources.
