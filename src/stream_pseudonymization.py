@@ -23,8 +23,6 @@ import xml.sax
 ## ---------------- ##
 class Settings(BaseSettings):
     """ The variables defined here will be taken from env vars if available and matching the type hint """
-    app_name: str = "DWH fhir-bundle patient pseudonymization"
-    app_description: str = "Pseudonymize patients in an xml fhir-bundle"
     log_level: str = "WARNING"
     log_format: str = "[%(asctime)s] {%(name)s/%(module)s:%(lineno)d (%(funcName)s)} %(levelname)s - %(message)s"
     secret_key: str
@@ -35,7 +33,7 @@ settings = Settings()
 formatter = logging.Formatter(settings.log_format)
 logging.basicConfig(format=settings.log_format)
 ## Set app's logger level and format...
-logger = logging.getLogger(settings.app_name)
+logger = logging.getLogger(__name__)
 logger.setLevel(settings.log_level)
 logger.warning("Logging loaded with default configuration")
 
