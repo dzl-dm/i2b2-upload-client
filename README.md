@@ -21,6 +21,8 @@ For each dataset you want to upload, you need the data (already transformed into
 ```
 A java program uses the XML configuration to convert the data into a fhir bundle in XML.
 
+> __NOTE:__ Further example data and `datasource.xml` files can be found in the [HiStream project](https://github.com/rwm/histream/tree/master/histream-import/src/test/resources)
+
 ## Stage 2 - Pseudonymization
 Data protection is very important, so this stage removes the name information and creates a non-reversible (but still deterministic) ID as the pseudonym for the patient. You must provide a `secret key` (a long, random string you generate yourself and keep secret) so that only you generate the pseudonym for the patients. If someone else were to run this stage with their secret key, it would not produce compatible pseudonyms. Record linkage can be achieved by sharing the secret key. This makes sense in environments where multiple people manage different parts of the same data set.
 > NOTE: If you already use pseudonyms, we don't require that you also use our pseudonymisation process. Once your data is uploaded, personal information such as patient name is not used. We remove this client-side during pseudonymization, but don't _yet_ provide an option to remove it without also generating new pseudonyms.
