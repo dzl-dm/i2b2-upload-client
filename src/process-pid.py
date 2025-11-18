@@ -4,10 +4,21 @@
     Script to pseudonymize an xml fhir-bundle
 """
 
+## Import built-ins
+from functools import cache
+import hashlib
+import json
+import os
+import sys
+
+## Import third party libraries
+import logging
+from lxml import etree
+
+
 ## ---------------- ##
 ## Create  settings ##
 ## ---------------- ##
-import os
 from pydantic_settings import BaseSettings
 class Settings(BaseSettings):
     """ The variables defined here will be taken from env vars if available and matching the type hint """
@@ -17,10 +28,8 @@ class Settings(BaseSettings):
     secret_key: str
     input_fn: str
     output_fn: str
-
 settings = Settings()
 
-import logging
 ## Format the root logger
 formatter = logging.Formatter(settings.log_format)
 logging.basicConfig(format=settings.log_format)
@@ -30,11 +39,6 @@ logger.setLevel(settings.log_level)
 
 logger.debug("settings and logging loaded and configured")
 logger.debug("Settings: %s", settings)
-
-## 3rd party imports
-import hashlib
-from lxml import etree
-import sys
 
 ## For each invocation of the application, we create a dict of patients and list their encounters
 patient_encounters:dict[str, list] = {}

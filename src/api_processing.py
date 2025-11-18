@@ -4,21 +4,26 @@ Description: Communicate with the API endpoint to allow viewing, (re-)uploading 
 stderr: for logs
 """
 
-## library imports
+## Import built-ins
 from functools import cache
 import json
-import logging
 import os
+import sys
+
+## Import third party libraries
+import importlib.metadata
+import logging
 from pydantic_settings import BaseSettings
 import requests
-import sys
 
 class AppMeta():
     """ Purely constants """
-    ## TODO: This should be in setup.py/setup.toml or something
-    app_name: str = "DWH client - API processing"
+    app_name: str = "i2b2-upload-client"
+    app_sub_name: str = "DWH client - API processing"
     app_description: str = "Can be used as script or module. Allows all API interactions."
-    app_version: str = "v0.0.6"
+    app_version: None|str = None
+## Populate app_version from pyproject.toml
+AppMeta.app_version = importlib.metadata.version(AppMeta.app_name)
 
 ## ---------------- ##
 ## Create  settings ##
@@ -35,10 +40,10 @@ settings = Settings()
 formatter = logging.Formatter(settings.log_format)
 logging.basicConfig(format=settings.log_format)
 ## Set app's logger level and format...
-logger = logging.getLogger(AppMeta.app_name)
+logger = logging.getLogger(AppMeta.app_sub_name)
 logger.setLevel(settings.log_level)
 logger.debug("Logging loaded with default configuration")
-logger.info("Running app '%s' version: %s", AppMeta.app_name, AppMeta.app_version)
+logger.info("Running app '%s' version: %s", AppMeta.app_sub_name, AppMeta.app_version)
 
 @cache
 def checkApiUserConnection(apiEndpoint:str = None, apiKey:str = None) -> dict:

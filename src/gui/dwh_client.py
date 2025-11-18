@@ -7,11 +7,18 @@ Usage: dwh-client.exe 2>> log/dwh-client.log
 Explainer: See which sources you have, trigger processing, delete them, update them or add new ones
 """
 
-## library imports
-import datetime
+## Import built-ins
 import gzip
-import logging
 import os
+import re
+import subprocess
+import sys
+import time
+
+## Import third party libraries
+import datetime
+import importlib.metadata
+import logging
 from pydantic_settings import BaseSettings
 import PySide6
 ## Bad practice, loading .ui file in code: https://doc.qt.io/qtforpython-6.2/PySide6/QtUiTools/loadUiType.html
@@ -21,17 +28,15 @@ from PySide6.QtUiTools import loadUiType, QUiLoader
 # from PySide6.QtUiTools import QUiLoader
 from PySide6.QtWidgets import QApplication, QWidget, QMainWindow, QFileDialog, QTableWidgetItem, QMessageBox
 import PySide6.QtGui
-import re
-import subprocess
-import sys
-import time
 
 class AppMeta():
     """ Purely constants """
-    ## TODO: This should be in setup.py/setup.toml or something
-    app_name: str = "DWH Upload Client"
+    app_name: str = "i2b2-upload-client"
+    app_sub_name: str = "DWH Upload Client"
     app_description: str = "A PySide6 (QT6) interactive GUI to upload fhir bundle to DWH server API"
-    app_version: str = "v0.0.8-beta"
+    app_version: None|str = None
+## Populate app_version from pyproject.toml
+AppMeta.app_version = importlib.metadata.version(AppMeta.app_name)
 
 ## ---------------- ##
 ## Create  settings ##
@@ -51,7 +56,7 @@ settings = Settings()
 formatter = logging.Formatter(settings.log_format)
 logging.basicConfig(format=settings.log_format)
 ## Set app's logger level and format...
-logger = logging.getLogger(AppMeta().app_name)
+logger = logging.getLogger(AppMeta().app_sub_name)
 logger.setLevel(settings.log_level)
 logger.warning("Logging loaded with default configuration")
 
@@ -72,7 +77,7 @@ class DwhClientWindow(QMainWindow, Ui_MainWindow):
         self.setupUi(self)
 
         ## Set the app constants
-        self.setWindowTitle(AppMeta().app_name)
+        self.setWindowTitle(AppMeta().app_sub_name)
         self.versionIndicatorLabel.setText(f'Version: {AppMeta().app_version}')
         self.versionIndicatorLabel.setToolTip(AppMeta().app_description)
         self.setWindowIcon(PySide6.QtGui.QIcon(os.path.join(projectRoot, 'resources', 'DzlLogoSymmetric.webp')))

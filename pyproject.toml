@@ -1,0 +1,27 @@
+[project]
+name = "i2b2-upload-client"
+version = "0.1.1"
+description = "Client-side DWH data preparation and upload"
+readme = "README.md"
+authors = [
+    { name = "Marc Griffiths", email = "marc.griffiths@innere.med.uni-giessen.de" }
+]
+requires-python = ">=3.12"
+dependencies = [
+    "datetime>=5.5",
+    "fhir-resources[xml]>=8.1.0",
+    "importlib>=1.0.4",
+    "importlib-metadata>=8.7.0",
+    "logging>=0.4.9.6",
+    "lxml>=6.0.2",
+    "prettytable>=3.17.0",
+    "pydantic-settings>=2.12.0",
+    "pyside6>=6.10.0",
+    "pyside6-addons>=6.10.0",
+    "pyside6-essentials>=6.10.0",
+    "requests>=2.32.5",
+]
+
+[build-system]
+requires = ["uv_build>=0.8.19,<0.9.0"]
+build-backend = "uv_build"

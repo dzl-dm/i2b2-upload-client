@@ -9,14 +9,17 @@ Usage: cat ./tmp/sample-fhir.xml | src/stream-pseudonymization.py > tmp/sample-f
 Explainer: Each entry is loaded into memory in turn, if its a patient, its pseudonymised, then its written
 """
 
-## library imports
+## Import built-ins
+import csv
 import hashlib
-import logging
-import lxml.sax
 import os
-from pydantic_settings import BaseSettings
 import sys
 import xml.sax
+
+## Import third party libraries
+import logging
+import lxml.sax
+from pydantic_settings import BaseSettings
 
 ## ---------------- ##
 ## Create  settings ##
