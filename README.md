@@ -252,3 +252,37 @@ Information on how to get more from the Data Warehouse's API. List all sources, 
 ## Delete a single source in the DWH
 /path/to/cli-client/src/api_processing.py -d -n "My Source Name"
 ```
+
+## Developer/contributions
+I'm a developer, how do I run/test and contribute to the project?
+
+Aside from python and the libraries imported and used inside the code, this project also uses `uv` as the build frontend and optionally the backend. You can keep using `pip`, but its not recommended, especially to ensure dependencies are corerctly defined. The project also uses `QT-Designer`, which is a GUI application to help design GUI's. This produces `.ui` files which then need converting to python with the `uic` tool. If you're not making GUI changes, you don't need this tool.
+
+To run the application locally:
+```sh
+## With uv:
+uv sync
+uv run [--no-project] src/gui/dwh_client.py
+## With pip:
+python -m venv .venv
+. .venv/bin/activate
+pip install .
+python src/gui/dwh_client.py
+deactivate
+```
+
+To build the GUI from `.ui` file
+```sh
+## You need to install pyside6-tools for the command `pyside6-uic`
+pyside6-uic src/gui/mainWindow.ui -o src/gui/ui_mainwindow.py
+```
+
+Build executables (should take ~45 seconds and produce executables of ~100mb)
+```sh
+## Relies on this once first:
+uv add --dev pyinstaller
+## Then each time:
+uv run pyinstaller dwh_client.spec
+## And for windows:
+uv run wine pyinstaller dwh_client.spec
+```

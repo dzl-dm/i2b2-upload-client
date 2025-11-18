@@ -1,6 +1,0 @@
-## The GUI also needs the requirements from normal src/requirements.txt
-PySide6
-PySide6_Addons
-PySide6_Essentials
-# PySide6-uic
-# pyside6-uic

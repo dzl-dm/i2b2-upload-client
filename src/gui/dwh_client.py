@@ -20,12 +20,10 @@ import datetime
 import importlib.metadata
 import logging
 from pydantic_settings import BaseSettings
-import PySide6
 ## Bad practice, loading .ui file in code: https://doc.qt.io/qtforpython-6.2/PySide6/QtUiTools/loadUiType.html
 # from PySide6 import uic
 from PySide6.QtCore import QFile
 from PySide6.QtUiTools import loadUiType, QUiLoader
-# from PySide6.QtUiTools import QUiLoader
 from PySide6.QtWidgets import QApplication, QWidget, QMainWindow, QFileDialog, QTableWidgetItem, QMessageBox
 import PySide6.QtGui
 
@@ -35,8 +33,6 @@ class AppMeta():
     app_sub_name: str = "DWH Upload Client"
     app_description: str = "A PySide6 (QT6) interactive GUI to upload fhir bundle to DWH server API"
     app_version: None|str = None
-## Populate app_version from pyproject.toml
-AppMeta.app_version = importlib.metadata.version(AppMeta.app_name)
 
 ## ---------------- ##
 ## Create  settings ##
@@ -60,13 +56,45 @@ logger = logging.getLogger(AppMeta().app_sub_name)
 logger.setLevel(settings.log_level)
 logger.warning("Logging loaded with default configuration")
 
+
 ## Custom modules - use pyinstaller "pathex" when building
 ## Use "binary" root if available, else python __file__
-# guiRoot = os.path.abspath(getattr(sys, '_MEIPASS', os.path.dirname(__file__)))
 projectRoot = os.path.abspath(getattr(sys, '_MEIPASS', os.path.join(os.path.dirname(__file__), '..', '..')))
 scriptDir = os.path.join(projectRoot, 'src' )
 sys.path.append(scriptDir)
 import api_processing
+
+def get_version():
+    """ Get version dynamically from pyprojects.toml if possible and update static file. 
+    Else, read from static file. Else 'unknown' """
+    version = "Unknown"
+    version_file = os.path.join(projectRoot, "build", "version.txt")
+    version_file_built = os.path.join(projectRoot, "version.txt")
+    logger.debug("Checking version...")
+
+    try:
+        version = importlib.metadata.version(AppMeta.app_name)
+        logger.warning("Found version '%s', setting to file '%s'", version, version_file)
+        with open(version_file, "w") as version_file:
+            version_file.write(version)
+    except importlib.metadata.PackageNotFoundError:
+        logger.error("Found error 'importlib.metadata.PackageNotFoundError' (metadata not available, attempting to read version file)")
+        if os.path.exists(version_file) and os.path.isfile(version_file):
+            with open(version_file, "r") as version_file:
+                version = version_file.read()
+        elif os.path.exists(version_file_built) and os.path.isfile(version_file_built):
+            with open(version_file_built, "r") as version_file:
+                version = version_file.read()
+        else:
+            logger.error("Version file '%s' not available, setting version to 'Unknown'", version_file_built)
+            version = "Unknown"
+    logger.info("Setting version: %s", version)
+    return version
+
+## Populate app_version from pyproject.toml
+if not AppMeta.app_version:
+    AppMeta.app_version = get_version()
+
 
 ## Load the UI exported from qt-designer .ui file
 ## With: pyside6-uic src/gui/mainWindow.ui -o src/gui/ui_mainwindow.py

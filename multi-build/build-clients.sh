@@ -47,8 +47,6 @@ function build_src_gui_client_package {
     cp -a ../src tmp/gui-client/
     rm tmp/gui-client/src/process-pid.py
     cp -a ../resources tmp/gui-client/
-    ## Build the py class(es) from .ui file(s)
-    pyside6-uic ../src/gui/mainWindow.ui -o tmp/gui-client/src/gui/ui_mainwindow.py
 
     ## Convert the markdown ReadMe to more universal HTML
     # pandoc -f markdown ../README.md > tmp/gui-client/README.html
@@ -67,11 +65,9 @@ function build_exe_gui_client_package {
     ## TODO: Confirm if it needs python given the way it calls steam_pseudonym
     log "Building the GUI (.exe for windows) client package..."
 
-    ## Trusting we're already in the venv
-    pyside6-uic ../src/gui/mainWindow.ui -o ../src/gui/ui_mainwindow.py
     ## Build windows exe (pyinstaller will put the artefact in dist/)
     cd ..
-    wine64 pyinstaller dwh_client.spec
+    uv run wine pyinstaller dwh_client.spec
     cd -
 
     log "GUI (.exe for windows) client package now available under: '${client_basedir}/dist/dwh_client.exe'"
@@ -82,14 +78,21 @@ function build_linux_gui_client_package {
     ## TODO: Use manylinux docker image to build version compatible with older glibc
     log "Building the GUI (binary for linux) client package..."
 
-    ## Trusting we're already in the venv
-    pyside6-uic ../src/gui/mainWindow.ui -o ../src/gui/ui_mainwindow.py
     ## Build linux binary (pyinstaller will put the artefact in dist/)
     cd ..
-    pyinstaller dwh_client.spec
+    uv run pyinstaller dwh_client.spec
     cd -
 
     log "GUI (binary for linux) client package now available under: '${client_basedir}/dist/dwh_client'"
+}
+
+function compile_gui {
+    ## Convert the QT Designer file into a python file
+    output_dir=${1:-../src/gui}
+
+    ## Build the py class(es) from .ui file(s)
+    uv run pyside6-uic ../src/gui/mainWindow.ui -o ${output_dir}/ui_mainwindow.py
+    log "GUI source '../src/gui/compiled mainWindow.ui' -> '${output_dir}/ui_mainwindow.py'"
 }
 
 ## Check for the build venv... (we need it to build the GUI)
@@ -98,6 +101,9 @@ type deactivate 2>/dev/null || { [[ -d "${client_basedir}/.venv" ]] && . ${clien
 ## Convert the markdown ReadMe to more universal HTML
 log "Compiling documentation..."
 pandoc -f markdown "${client_basedir}/README.md" > "${client_basedir}/dist/README.html"
+
+log "Compiling GUI..."
+compile_gui
 
 ## Build each client, then cleanup...
 log "Building clients..."

@@ -21,9 +21,6 @@ class AppMeta():
     app_name: str = "i2b2-upload-client"
     app_sub_name: str = "DWH client - API processing"
     app_description: str = "Can be used as script or module. Allows all API interactions."
-    app_version: None|str = None
-## Populate app_version from pyproject.toml
-AppMeta.app_version = importlib.metadata.version(AppMeta.app_name)
 
 ## ---------------- ##
 ## Create  settings ##
@@ -43,7 +40,6 @@ logging.basicConfig(format=settings.log_format)
 logger = logging.getLogger(AppMeta.app_sub_name)
 logger.setLevel(settings.log_level)
 logger.debug("Logging loaded with default configuration")
-logger.info("Running app '%s' version: %s", AppMeta.app_sub_name, AppMeta.app_version)
 
 @cache
 def checkApiUserConnection(apiEndpoint:str = None, apiKey:str = None) -> dict:

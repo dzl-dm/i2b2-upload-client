@@ -5,16 +5,16 @@ a = Analysis(
     ['src/gui/dwh_client.py'],
     pathex=[],
     binaries=[],
-    datas=[('resources', 'resources'), ('src', 'src'), ('src/gui/ui_mainwindow.py', 'src/gui/')],
-    hiddenimports=['requests'],
+    datas=[('resources', 'resources'), ('src', 'src'), ('src/gui/ui_mainwindow.py', 'src/gui/'), ('build/version.txt', './')],
+    hiddenimports=[],
     hookspath=[],
     hooksconfig={},
     runtime_hooks=[],
     excludes=[],
     noarchive=False,
-    optimize=0,
+    optimize=2,
 )
-pyz = PYZ(a.pure)
+pyz = PYZ(a.pure, a.zipped_data)
 
 exe = EXE(
     pyz,
@@ -35,4 +35,5 @@ exe = EXE(
     target_arch=None,
     codesign_identity=None,
     entitlements_file=None,
+    icon=['resources/DzlLogoSymmetric.ico'],
 )
