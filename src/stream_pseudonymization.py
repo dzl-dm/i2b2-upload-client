@@ -29,7 +29,8 @@ class Settings(BaseSettings):
     log_level: str = "WARNING"
     log_format: str = "[%(asctime)s] {%(name)s/%(module)s:%(lineno)d (%(funcName)s)} %(levelname)s - %(message)s"
     secret_key: str
-
+    user_mapping_filename: str = "psn-cache.tsv"
+    user_mapping_separator: str = "\t"
 settings = Settings()
 
 ## Load logger for this file/script
@@ -46,7 +47,7 @@ def is_stdin_piped():
 class FhirStream(xml.sax.ContentHandler):
     """ SAX ContentHandler to help build each <Entry> by informing an lxml class """
     entryResourceTypes:list[str] = ["Patient", "Encounter"]
-    def __init__(self):
+    def __init__(self, mapping_output: None|csv.DictWriter = None):
         """ Ensure the XML definition is written
         Also setup the monitoring dict to detect clashes
         """
@@ -55,6 +56,7 @@ class FhirStream(xml.sax.ContentHandler):
         self.currentDepth:int = 0
         self.currentPatient:int = None
         self.currentEncounter:int = None
+        self.mapping_output = mapping_output
 
         ## Write the xml declaration (to stdout)
         print('<?xml version="1.0" ?>')
@@ -151,6 +153,13 @@ class FhirStream(xml.sax.ContentHandler):
             self._validAttrib(self.currentSubElement.etree.xpath("//resource/Patient/name/family/@value")),
             self._validAttrib(self.currentSubElement.etree.xpath("//resource/Patient/birthDate/@value")),
         )
+        mapped_patient = {
+            "given-names": self.currentSubElement.etree.xpath("//resource/Patient/name/given/@value")[0],
+            "surname": self.currentSubElement.etree.xpath("//resource/Patient/name/family/@value")[0],
+            "birthdate": self.currentSubElement.etree.xpath("//resource/Patient/birthDate/@value")[0],
+            "pseudonym": self.currentSubElement.etree.xpath("//resource/Patient/identifier/value/@value")[0],
+        }
+        self.mapping_output.writerow(mapped_patient)
         if len(self.currentSubElement.etree.xpath("//resource/Patient/name")) > 1:
             logger.warning("Patient '%s' has more than 1 'name' entry, removing all, 1st occurance used for pseudonymization", self.currentPatient)
         for nameElem in self.currentSubElement.etree.xpath("//resource/Patient/name"):
@@ -193,12 +202,17 @@ if __name__ == "__main__":
         logger.error("This script demands piped input data from an xml fhir bundle, eg cat fhir.xml | this-script.py")
         sys.exit(1)
 
-    ## Set up the sax parser
-    sp = xml.sax.make_parser()
-    sp.setContentHandler(FhirStream())
-    sp.setFeature(xml.sax.handler.feature_namespaces, 0)
+    mapping_headings = ["given-names","surname","birthdate","pseudonym"]
+    with open(settings.user_mapping_filename, 'w', newline='\n') as f:
+        mapping_writer = csv.DictWriter(f, delimiter=settings.user_mapping_separator, quotechar='"', quoting=csv.QUOTE_MINIMAL, fieldnames=mapping_headings, lineterminator='\n')
+        mapping_writer.writeheader()
 
-    ## sax parses by emitting events when a tag or data is found, so the response to the events is all handled in the ContentHandler class above
-    sp.parse(sys.stdin)
+        ## Set up the sax parser
+        sp = xml.sax.make_parser()
+        sp.setContentHandler(FhirStream(mapping_output = mapping_writer))
+        sp.setFeature(xml.sax.handler.feature_namespaces, 0)
+
+        ## sax parses by emitting events when a tag or data is found, so the response to the events is all handled in the ContentHandler class above
+        sp.parse(sys.stdin)
 
     logger.info("Script run completed!")
