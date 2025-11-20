@@ -1,11 +1,59 @@
 # i2b2 upload client
+This software helps you upload data collected in medical registers, studies and trials to a centralized Data Warehouse, which can be queried for discovery of relevant data and Bio-Material for further research.
+
+## The Goal
+Enable your data to be searched using canonical terms (defined in the DZL's Meta Data Repository, [CoMetaR](https://data.dzl.de/cometar/#/)). The search doesn't allow patient identification or some very granular or complex queries. The primary purpose is to democratize visibility and discovery of the data and samples through feasibility queries. Access to actual data will require further steps with the local data manager to each site who must ensure the data and samples may be shared. The DZL must also be informed of publications being made which utilize DZL funded data/sample collection.
+
+## Preparing the data
+The DZL DWH has certain structure/format requirements for data to be uploaded, which is split into 2 stages. Ultimately, the data must be uploaded with pseudonymized patients and canonicalized data as an XML FHIR Bundle containing Patient, Encounter and Observation resources. The pseudonymization and conversion to FHIR can be handled by our upload client in the [uploading the data](#uploading-the-data) stage, but that process also requires well formatted data and a mapping file, usually named `datasource.xml`.
+
+The broad principals:  
+
+* Separate Patients, Visits, Observations  
+* Observations can be in long/EAV format or wide format (you can provide multiple observation files, each in different formats)  
+* Using wide format can handle `modifiers` better  
+    * Modifiers can be seen highlighted green in [CoMetaR](https://data.dzl.de/cometar/#/), they provide supporting information to a concept  
+
+Because each project/datasource will deliver their data in various formats, pre-processing or transformation of the data needs to be done uniqely for each. We often use `Rscript`s to solve these problems, though it is not a perfect, repeatable process and other tools can be used at this stage, you must read on and understand the rest of the process to know what the target format is here.
+
+When everything runs correctly, you will have created some `.csv` files matching the 1st broad princpal above (patients, visits, observations). You can now ensure your mapping file, `datasource.xml`, looks correct.
+
+You can find examples of the `datasource.xml` [here](https://github.com/rwm/histream/tree/master/histream-import/src/test/resources). If you need further help, please get in contact with [central data management](https://dzl.de/en/platforms/contact-central-data-management/)
+
+Once you are happy with the csv and mapping files, you can move on to uploading data.
+
+## Uploading the data
+This part converts the tabular data (csv files) into XML, pseudonymizes patient identifiable data and communicates with the DZL DWH server to upload and integrate the data.
+
+The `i2b2-upload-client`, this project, helps you do all of these tasks, you can download from the [github project](https://github.com/dzl-dm/i2b2-upload-client/releases)'s releases. Primarily, I recommend the graphical version (`dwh client.exe` for Windows users, `dwh client` for linux/mac users) which should contain all the technical components required to run. The other options may be useful if you would like to automate the process and integrate into scripts. I will describe the GUI usage here.
+
+Requirements:  
+
+* An API key from DZL Central Data Management team  
+* A salt/pseudonym-key which you generate yourself  
+
+When you open the client, the window will have 2 tabs at the top, `Local processing` and `DWH processing`. You would usually use them left to right. So starting with Local processing, Stage 1 will ingest all the data and mapping you created earlier and produce an XML file with the raw fhir data. You must select the `datasource.xml` file and ensure its internal references to data files are correct (eg, copy/link it to the correct directory). The client will try to auto-populate as many of the other text boxes as possible, so you should be able to "Generate Fhir bundle" after selecting just that one file.
+
+The next stage will pseudonymize the patient data. Even if you already use pseudonyms, this stage can be applied. It also removes certain fields from the xml fhir bundle which are not required. You must supply and "Pseudonymization key" or salt, which is used to hash the patient data. This salt is like a password, it allows the hash to remain deterministic, but only to those knowing the salt (so you, and only you, can re-identify patient id's - this becomes relevant when DWH users request data from you).
+
+The data is now ready, so the final phase is uploading and integrating to the DWH - this happens in the "DWH processing" tab. The 1st textbox should be pre-filled with the API URL (https://data.dzl.de/api), please enter your API key in the 2nd text box at the top and press "Connect...". If it worked, the button will turn green.
+
+Now, the datasource file refers to the XML FHIR Bundle generated and pseudonymized in "Local processing", it'll be pre-filled with the default (if you have been through stages 1 and 2), so you only need to change it if that doesn't fit for you.
+
+The main drop-down menu lets you see each datasource which you manage, if you're updating an existing source, ensure you select it here - That will also update the datasource text-box. You can use the "Show info" and "Show errors" buttons to see some more details about the existing upload, or use the "Delete source" button to remove it from the DWH.
+
+Uploading a new source works the same way as updating an existing source. They will overwrite the datasource corresponding to the datasource name textbox. When you press "Upload", the FHIR Bundle is sent to the server, using compression if needed. Once this has finished (you may need to press "Reload status" to check), you must still press "Update source", which tells the server to integrate the new data into the DWH. This can take some time, so you will want to press the "Reload status" button again to keep checking.
+
+If everything worked, the server will run some further processing to optimize the query tool, but from your point of view, the process is complete.
+
+## How it works
 This application uses 3 components to upload patient data to a Data Warehouse. To use the application, you do not need to have a technical understanding of each part, they are however visible as a user so you must be aware of the broad process and what is required of you at each stage. Each stage can be run independently from the other.
 
 1. Convert CSV data into standardized a FHIR bundle in XML format
 1. Pseudonymize the identifiable data (if it isn't already)
 1. Upload to the DWH and manage the status of the data
 
-## Stage 1 - FHIR conversion
+### Stage 1 - FHIR conversion
 For each dataset you want to upload, you need the data (already transformed into csv files) and a `datasource.xml` configuration file, which maps the csv data to standard, internationally recognised concept codes. This is the same as with the previous client, however, we need to add an extra XML tag for timezone within the "\<meta\>" element.
 ```xml
 <?xml version="1.0" encoding="UTF-8"?>
@@ -23,11 +71,11 @@ A java program uses the XML configuration to convert the data into a fhir bundle
 
 > __NOTE:__ Further example data and `datasource.xml` files can be found in the [HiStream project](https://github.com/rwm/histream/tree/master/histream-import/src/test/resources)
 
-## Stage 2 - Pseudonymization
-Data protection is very important, so this stage removes the name information and creates a non-reversible (but still deterministic) ID as the pseudonym for the patient. You must provide a `secret key` (a long, random string you generate yourself and keep secret) so that only you generate the pseudonym for the patients. If someone else were to run this stage with their secret key, it would not produce compatible pseudonyms. Record linkage can be achieved by sharing the secret key. This makes sense in environments where multiple people manage different parts of the same data set.
-> NOTE: If you already use pseudonyms, we don't require that you also use our pseudonymisation process. Once your data is uploaded, personal information such as patient name is not used. We remove this client-side during pseudonymization, but don't _yet_ provide an option to remove it without also generating new pseudonyms.
+### Stage 2 - Pseudonymization
+Data protection is very important, so this stage removes the name information and creates a non-reversible (but still deterministic) ID as the pseudonym for the patient. You must provide a `secret key` (a long, random string you generate yourself and keep secret) so that only you generate the pseudonym for the patients. If someone else were to run this stage with their secret key, it would not produce compatible pseudonyms. Record linkage can be achieved by sharing the secret key. This makes sense in environments where multiple people manage different parts of the same data set. Since client version v0.1.1, we also write a `psn-cache.tsv` file which helps you to re-identify patients upon request.
+> NOTE: If you already use pseudonyms, we don't require that you also use our pseudonymisation process (although it doesn't hurt). Once your data is uploaded, personal information such as patient name is not used. We remove this client-side during pseudonymization, but don't _yet_ provide an option to remove it without also generating new pseudonyms.
 
-## Stage 3 - Upload and DWH management
+### Stage 3 - Upload and DWH management
 In the base upload case, this is a two part process, where you must trigger each part manaully:
 
 * Upload - Send the FHIR data
@@ -35,7 +83,7 @@ In the base upload case, this is a two part process, where you must trigger each
 
 You can add, update and delete the data in this stage. You must provide your `API key` (will be provided to you when you are invited to use the upload system). You can also view the status of each source that you have already added to the DWH.
 
-## Summary
+### Summary
 What you need to make an upload:
 
 * Transformed data as `.csv` file(s)
@@ -50,7 +98,7 @@ What you need to make an upload:
 I have developed a Graphical User Interface (GUI) which uses the same background code as the [command line client](#the-cli-client). It "simply" adds a visual interface to make the process more intuitive and less error prone.
 
 ## Using the GUI client
-The GUI is designed to be intuitive so does not need much explanation here. You should recognise the main 3 stages from above and be able to associate the relevant fields and actions. Some fields are auto-filled with expected file paths, you can still choose to change them.
+The GUI is designed to be intuitive so does not need much explanation here (and is explained above). You should recognise the main 3 stages from above and be able to associate the relevant fields and actions. Some fields are auto-filled with expected file paths, you can still choose to change them.
 
 ## Installing the GUI client
 There are 3 versions of this client, each provides the same interface but are implemented differently which may be more or less compatible with your system.
