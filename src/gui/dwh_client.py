@@ -70,6 +70,7 @@ def get_version():
     version = "Unknown"
     version_file = os.path.join(projectRoot, "build", "version.txt")
     version_file_built = os.path.join(projectRoot, "version.txt")
+    pyproject_file = os.path.join(projectRoot, "pyproject.toml")
     logger.debug("Checking version...")
 
     try:
@@ -79,7 +80,14 @@ def get_version():
             version_file.write(version)
     except importlib.metadata.PackageNotFoundError:
         logger.error("Found error 'importlib.metadata.PackageNotFoundError' (metadata not available, attempting to read version file)")
-        if os.path.exists(version_file) and os.path.isfile(version_file):
+        if os.path.isfile(pyproject_file):
+            logger.error("Attempting to read toml file directly")
+            import toml
+            my_pyproject = toml.load(pyproject_file)
+            version = my_pyproject['project']['version']
+            with open(version_file, "w") as version_file:
+                version_file.write(version)
+        elif os.path.exists(version_file) and os.path.isfile(version_file):
             with open(version_file, "r") as version_file:
                 version = version_file.read()
         elif os.path.exists(version_file_built) and os.path.isfile(version_file_built):

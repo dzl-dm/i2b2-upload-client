@@ -1,6 +1,6 @@
 [project]
 name = "i2b2-upload-client"
-version = "0.1.1"
+version = "0.1.2"
 description = "Client-side DWH data preparation and upload"
 readme = "README.md"
 authors = [
@@ -20,6 +20,7 @@ dependencies = [
     "pyside6-addons>=6.10.0",
     "pyside6-essentials>=6.10.0",
     "requests>=2.32.5",
+    "toml>=0.10.2",
 ]
 
 [build-system]

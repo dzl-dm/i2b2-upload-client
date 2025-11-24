@@ -30,10 +30,10 @@ function build_cli_client_package {
 
     ## Build the archive
     cd tmp
-    rm ../../dist/cli-client.zip
-    zip -r ../../dist/cli-client.zip cli-client/
+    rm ../../dist/client-command-line.zip
+    zip -r ../../dist/client-command-line.zip cli-client/
     cd -
-    log "cli client package now available under: '${client_basedir}/dist/cli-client.zip'"
+    log "cli client package now available under: '${client_basedir}/dist/client-command-line.zip'"
 }
 
 function build_src_gui_client_package {
@@ -54,10 +54,10 @@ function build_src_gui_client_package {
 
     ## Build the archive
     cd tmp
-    rm ../../dist/gui-client.zip
-    zip -r ../../dist/gui-client.zip gui-client/
+    rm ../../dist/client-source.zip
+    zip -r ../../dist/client-source.zip gui-client/
     cd -
-    log "GUI (source) client package now available under: '${client_basedir}/dist/gui-client.zip'"
+    log "GUI (source) client package now available under: '${client_basedir}/dist/client-source.zip'"
 }
 
 function build_exe_gui_client_package {
@@ -68,9 +68,10 @@ function build_exe_gui_client_package {
     ## Build windows exe (pyinstaller will put the artefact in dist/)
     cd ..
     uv run wine pyinstaller dwh_client.spec
+    mv dist/dwh_client.exe dist/dwh_client_windows.exe
     cd -
 
-    log "GUI (.exe for windows) client package now available under: '${client_basedir}/dist/dwh_client.exe'"
+    log "GUI (.exe for windows) client package now available under: '${client_basedir}/dist/dwh_client_windows.exe'"
 }
 
 function build_linux_gui_client_package {
@@ -81,9 +82,10 @@ function build_linux_gui_client_package {
     ## Build linux binary (pyinstaller will put the artefact in dist/)
     cd ..
     uv run pyinstaller dwh_client.spec
+    mv dist/dwh_client dist/dwh_client_linux
     cd -
 
-    log "GUI (binary for linux) client package now available under: '${client_basedir}/dist/dwh_client'"
+    log "GUI (binary for linux) client package now available under: '${client_basedir}/dist/dwh_client_linux'"
 }
 
 function compile_gui {
@@ -94,6 +96,17 @@ function compile_gui {
     uv run pyside6-uic ../src/gui/mainWindow.ui -o ${output_dir}/ui_mainwindow.py
     log "GUI source '../src/gui/compiled mainWindow.ui' -> '${output_dir}/ui_mainwindow.py'"
 }
+function update_version_file {
+    ## Ensure the static "version.txt" file used for binaries is updated to reflect the pyproject.toml version
+    cd ${client_basedir}
+    python3 -c "import toml; my_pyproject = toml.load('pyproject.toml'); version = my_pyproject['project']['version']; print('Setting version: ', version); open('build/version.txt', 'w').write(version);"
+    cd -
+}
+function convert_icon {
+    cd ${client_basedir}
+    magick resources/DzlLogoSymmetric.webp -resize x64 -gravity center -crop 64x64+0+0 -flatten -colors 256 -background transparent resources/DzlLogoSymmetric.ico
+    cd -
+}
 
 ## Check for the build venv... (we need it to build the GUI)
 type deactivate 2>/dev/null || { [[ -d "${client_basedir}/.venv" ]] && . ${client_basedir}/.venv/bin/activate && log "Using python venv..."; } || log "I don't see a venv, check that is correct?"
@@ -102,6 +115,9 @@ type deactivate 2>/dev/null || { [[ -d "${client_basedir}/.venv" ]] && . ${clien
 log "Compiling documentation..."
 pandoc -f markdown "${client_basedir}/README.md" > "${client_basedir}/dist/README.html"
 
+log "Syncing version numbers..."
+update_version_file
+convert_icon
 log "Compiling GUI..."
 compile_gui
 
