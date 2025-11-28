@@ -61,10 +61,10 @@ logger.warning("Logging loaded with default configuration")
 ## Custom modules - use pyinstaller "pathex" when building
 ## Use "binary" root if available, else python __file__
 projectRoot = os.path.abspath(getattr(sys, '_MEIPASS', os.path.join(os.path.dirname(__file__), '..', '..')))
-scriptDir = os.path.join(projectRoot, 'src', 'logic' )
+scriptDir = os.path.join(projectRoot, 'src' )
 sys.path.append(scriptDir)
-import api_processing
-import stream_pseudonymization
+from i2b2_upload_client.logic import api_processing
+from i2b2_upload_client.logic import stream_pseudonymization
 
 def get_version():
     """ Get version dynamically from pyprojects.toml if possible and update static file. 
@@ -77,9 +77,7 @@ def get_version():
 
     try:
         version = importlib.metadata.version(AppMeta.app_name)
-        logger.warning("Found version '%s', setting to file '%s'", version, version_file)
-        with open(version_file, "w") as version_file:
-            version_file.write(version)
+        logger.warning("Found version '%s'", version)
     except importlib.metadata.PackageNotFoundError:
         logger.error("Found error 'importlib.metadata.PackageNotFoundError' (metadata not available, attempting to read version file)")
         if os.path.isfile(pyproject_file):
@@ -87,8 +85,6 @@ def get_version():
             import toml
             my_pyproject = toml.load(pyproject_file)
             version = my_pyproject['project']['version']
-            with open(version_file, "w") as version_file:
-                version_file.write(version)
         elif os.path.exists(version_file) and os.path.isfile(version_file):
             with open(version_file, "r") as version_file:
                 version = version_file.read()
@@ -108,7 +104,7 @@ if not AppMeta.app_version:
 
 ## Load the UI exported from qt-designer .ui file
 ## With: pyside6-uic src/gui/mainWindow.ui -o src/gui/ui_mainwindow.py
-from ui_mainwindow import Ui_MainWindow
+from i2b2_upload_client.gui.ui_mainwindow import Ui_MainWindow
 class DwhClientWindow(QMainWindow, Ui_MainWindow):
     def __init__(self, parent=None):
         QMainWindow.__init__(self, parent)
@@ -479,7 +475,7 @@ def nowTimeStamp() -> str:
     return datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     # return f"{datetime.datetime.now():%Y-%m-%d %H:%M:%S}"
 
-if __name__ == '__main__':
+def main():
     # You need one (and only one) QApplication instance per application.
     # Pass in sys.argv to allow command line arguments for your app.
     # If you know you won't use command line arguments QApplication([]) works too.
@@ -498,3 +494,7 @@ if __name__ == '__main__':
     ## Your application won't reach here until you exit and the event
     ## loop has stopped.
     logger.info("GUI client closed!")
+
+if __name__ == '__main__':
+    """ Best to call the main function directly (eg with uv run <script name>)."""
+    main()

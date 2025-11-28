@@ -1,6 +1,8 @@
 [project]
 name = "i2b2-upload-client"
-version = "0.1.2"
+## Reject publish to PyPI
+classifiers = ["Private :: Do Not Upload"]
+version = "0.2.0"
 description = "Client-side DWH data preparation and upload"
 readme = "README.md"
 authors = [
@@ -23,11 +25,21 @@ dependencies = [
     "toml>=0.10.2",
 ]
 
+[project.scripts]
+build = "build_executables:main"
+dwh_client = "dwh_client:main"
+
 [build-system]
 requires = ["uv_build>=0.8.19,<0.9.0"]
 build-backend = "uv_build"
 
+[tool.uv.build-backend]
+module-name = "i2b2_upload_client"
+source-include = ["src/dwh_client.py", "src/i2b2_upload_client/*", "src/i2b2_upload_client/**/*", "pyproject.toml"]
+
+
 [dependency-groups]
 dev = [
     "pyinstaller>=6.16.0",
+    "ruff>=0.14.6",
 ]

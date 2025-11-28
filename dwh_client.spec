@@ -2,11 +2,11 @@
 
 
 a = Analysis(
-    ['src/gui/dwh_client.py'],
+    ['src/dwh_client.py'],
     pathex=[],
     binaries=[],
-    datas=[('resources', 'resources'), ('src', 'src'), ('src/gui/ui_mainwindow.py', 'src/gui/'), ('build/version.txt', './')],
-    hiddenimports=['requests'],
+    datas=[('resources', 'resources'), ('build/version.txt', './')],
+    hiddenimports=[],
     hookspath=[],
     hooksconfig={},
     runtime_hooks=[],
