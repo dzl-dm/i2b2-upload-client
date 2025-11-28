@@ -11,7 +11,6 @@ import os
 import sys
 
 ## Import third party libraries
-import importlib.metadata
 import logging
 from pydantic_settings import BaseSettings
 import requests

@@ -57,12 +57,14 @@ logger.setLevel(settings.log_level)
 logger.warning("Logging loaded with default configuration")
 
 
+## TODO: Build as included modules, not files
 ## Custom modules - use pyinstaller "pathex" when building
 ## Use "binary" root if available, else python __file__
 projectRoot = os.path.abspath(getattr(sys, '_MEIPASS', os.path.join(os.path.dirname(__file__), '..', '..')))
-scriptDir = os.path.join(projectRoot, 'src' )
+scriptDir = os.path.join(projectRoot, 'src', 'logic' )
 sys.path.append(scriptDir)
 import api_processing
+import stream_pseudonymization
 
 def get_version():
     """ Get version dynamically from pyprojects.toml if possible and update static file. 
@@ -277,25 +279,9 @@ class DwhClientWindow(QMainWindow, Ui_MainWindow):
     def pseudonymizeFhir(self):
         """ Call the exisiting "script" style python code """
         logger.info("Pseudonymisation started...")
-        # try: self.pseudonymizeButton.clicked.disconnect()
-        # except Exception: pass
         self.pseudonymizeButton.setEnabled(False)
-        proc = None
-        ## Stream raw fhir as input and write output as stream from streamed stdout
-        with open(self.rawFhirFileText.text(), 'r') as rawFhir:
-            with open(self.dwhFhirFileText.text(), 'w') as dwhFhir:
-                psyeudonymEnv = os.environ.copy()
-                psyeudonymEnv['secret_key'] = self.secretKeyPasswordEdit.text()
-                pseudonymizationScript = os.path.join(projectRoot, 'src', 'stream_pseudonymization.py')
-                # proc = subprocess.run([pseudonymizationScript], input=rawFhir.read(), capture_output=True, text=True)
-                proc = subprocess.Popen(['python', pseudonymizationScript], stdin=rawFhir, stdout=subprocess.PIPE, env=psyeudonymEnv)
-                while True:
-                    line = proc.stdout.readline()
-                    if not line:
-                        break
-                    dwhFhir.write(line.decode())
-        proc.communicate()
-        if proc.returncode == 0:
+        ## Streaming handled by module, just provide file names and salt/secret-key
+        if stream_pseudonymization.process_fhir_bundle(self.rawFhirFileText.text(), self.dwhFhirFileText.text(), self.secretKeyPasswordEdit.text()):
             # self.stage2StatusLabel.append(f"<b>Stage 2:</b> Completed successfully!")
             self.stage2StatusLabel.setText("<b style='color:green; font-size:12pt;'>Status:</b>")
             self.stage2StatusText.setText('<html><head/><body><p><span style=" font-size:12pt; font-weight:600;">Stage 2:</span> Completed successfully!</p></body></html>')
