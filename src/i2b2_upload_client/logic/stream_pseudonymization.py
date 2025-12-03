@@ -131,10 +131,10 @@ class FhirStream(xml.sax.ContentHandler):
             self._validAttrib(self.currentSubElement.etree.xpath("//resource/Patient/birthDate/@value")),
         )
         mapped_patient = {
-            "given-names": self.currentSubElement.etree.xpath("//resource/Patient/name/given/@value")[0],
-            "surname": self.currentSubElement.etree.xpath("//resource/Patient/name/family/@value")[0],
-            "birthdate": self.currentSubElement.etree.xpath("//resource/Patient/birthDate/@value")[0],
-            "pseudonym": self.currentSubElement.etree.xpath("//resource/Patient/identifier/value/@value")[0],
+            "given-names": self._validAttrib(self.currentSubElement.etree.xpath("//resource/Patient/name/given/@value")),
+            "surname": self._validAttrib(self.currentSubElement.etree.xpath("//resource/Patient/name/family/@value")),
+            "birthdate": self._validAttrib(self.currentSubElement.etree.xpath("//resource/Patient/birthDate/@value")),
+            "pseudonym": self._validAttrib(self.currentSubElement.etree.xpath("//resource/Patient/identifier/value/@value")),
         }
         self.mapping_output.writerow(mapped_patient)
         if len(self.currentSubElement.etree.xpath("//resource/Patient/name")) > 1:

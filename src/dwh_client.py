@@ -17,7 +17,6 @@ import time
 
 ## Import third party libraries
 import datetime
-import importlib.metadata
 import logging
 from pydantic_settings import BaseSettings
 ## Bad practice, loading .ui file in code: https://doc.qt.io/qtforpython-6.2/PySide6/QtUiTools/loadUiType.html
@@ -57,12 +56,8 @@ logger.setLevel(settings.log_level)
 logger.warning("Logging loaded with default configuration")
 
 
-## TODO: Build as included modules, not files
-## Custom modules - use pyinstaller "pathex" when building
 ## Use "binary" root if available, else python __file__
-projectRoot = os.path.abspath(getattr(sys, '_MEIPASS', os.path.join(os.path.dirname(__file__), '..', '..')))
-scriptDir = os.path.join(projectRoot, 'src' )
-sys.path.append(scriptDir)
+projectRoot = os.path.abspath(getattr(sys, '_MEIPASS', os.path.join(os.path.dirname(__file__), '..')))
 from i2b2_upload_client.logic import api_processing
 from i2b2_upload_client.logic import stream_pseudonymization
 
@@ -75,25 +70,20 @@ def get_version():
     pyproject_file = os.path.join(projectRoot, "pyproject.toml")
     logger.debug("Checking version...")
 
-    try:
-        version = importlib.metadata.version(AppMeta.app_name)
-        logger.warning("Found version '%s'", version)
-    except importlib.metadata.PackageNotFoundError:
-        logger.error("Found error 'importlib.metadata.PackageNotFoundError' (metadata not available, attempting to read version file)")
-        if os.path.isfile(pyproject_file):
-            logger.error("Attempting to read toml file directly")
-            import toml
-            my_pyproject = toml.load(pyproject_file)
-            version = my_pyproject['project']['version']
-        elif os.path.exists(version_file) and os.path.isfile(version_file):
-            with open(version_file, "r") as version_file:
-                version = version_file.read()
-        elif os.path.exists(version_file_built) and os.path.isfile(version_file_built):
-            with open(version_file_built, "r") as version_file:
-                version = version_file.read()
-        else:
-            logger.error("Version file '%s' not available, setting version to 'Unknown'", version_file_built)
-            version = "Unknown"
+    if os.path.isfile(pyproject_file):
+        logger.error("Attempting to read toml file directly")
+        import toml
+        my_pyproject = toml.load(pyproject_file)
+        version = my_pyproject['project']['version']
+    elif os.path.exists(version_file) and os.path.isfile(version_file):
+        with open(version_file, "r") as version_file:
+            version = version_file.read()
+    elif os.path.exists(version_file_built) and os.path.isfile(version_file_built):
+        with open(version_file_built, "r") as version_file:
+            version = version_file.read()
+    else:
+        logger.error("Version file '%s' not available, setting version to 'Unknown'", version_file_built)
+        version = "Unknown"
     logger.info("Setting version: %s", version)
     return version
 
